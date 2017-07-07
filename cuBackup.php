@@ -18,7 +18,7 @@
 
 $scriptIsActive = 1; // 0 => script will only return a blank page, nothing done (switched off) || 1 = will run
 
-/* Enter some db-Credentials here - if no other credentials found, the will be used */
+/* You can enter your db-Credentials here - if no other credentials found, this will be used */
 /** @noinspection PhpUnreachableStatementInspection */
 $dbServer   = '';
 $dbUser     = '';
