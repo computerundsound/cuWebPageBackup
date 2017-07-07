@@ -1,0 +1,13 @@
+{
+  "name": "cu/cu-web-page-backup",
+  "description": "cuBackup - backup of webpage",
+  "license": "MIT",
+  "type": "project",
+  "authors": [
+    {
+      "name": "Joerg Wrase",
+      "email": "comp@cusp.de"
+    }
+  ],
+  "require": {}
+}

@@ -3,7 +3,7 @@
  * Copyright by Jörg Wrase - www.Computer-Und-Sound.de
  * Date: 03.07.2017
  * Time: 01:54
- * 
+ *
  * Created by PhpStorm
  *
  */
@@ -16,7 +16,7 @@
 
 /* Remove this to enable this script {because it is secure to have an exit here, if script is not used} */
 
-$scriptIsActive = 0; // 0 => script will only return a blank page, nothing done (switched off) || 1 = will run
+$scriptIsActive = 1; // 0 => script will only return a blank page, nothing done (switched off) || 1 = will run
 
 /* Enter some db-Credentials here - if no other credentials found, the will be used */
 /** @noinspection PhpUnreachableStatementInspection */
@@ -37,7 +37,6 @@ $dbFileOnServer  = 'cuBackup.sql'; // File on Server to for db
  * Script Start
  *
  */
-
 session_start();
 
 if (isset($_POST['killSession']) && $_POST['killSession'] === 'true') {
@@ -89,6 +88,19 @@ ini_set('max_input_vars', '5500');
 if ($scriptIsActive !== 1) {
     exit;
 }
+
+/**
+ *
+ * @return mixed
+ *
+ * @since version
+ */
+function php53() {
+
+    return version_compare(PHP_VERSION, '5.3', '>');
+
+}
+
 /** @noinspection PhpMultipleClassesDeclarationsInOneFile */
 
 /**
@@ -197,7 +209,11 @@ function getDirsFromDir($dir, &$directoryListAsString) {
     $dirs        = array();
     $directories = glob($dir . '*', GLOB_ONLYDIR);
 
-    sort($directories, SORT_STRING | SORT_FLAG_CASE);
+    // php 5.3
+    sort($directories, SORT_STRING);
+
+    // php 5.4 and greater
+//    sort($directories, SORT_STRING | SORT_FLAG_CASE);
 
     foreach ($directories as $directory) {
 
@@ -341,6 +357,17 @@ class Cu_DBCredentials
         $this->dbName = (string)$dbName;
     }
 
+    /**
+     *
+     * @return bool
+     *
+     */
+    public function validate() {
+
+        return !($this->getDbName() === '' || $this->getDbUser() === '');
+
+    }
+
 
 }
 
@@ -379,7 +406,7 @@ class Cu_Backup
     ) {
 
         $configs['gambio'] = array(
-            'file'          => __DIR__ . '/admin/includes/configure.php',
+            'file'          => dirname(__FILE__) . '/admin/includes/configure.php',
             'constantNames' => array(
                 'dbServer'   => 'DB_SERVER',
                 'dbName'     => 'DB_DATABASE',
@@ -390,7 +417,7 @@ class Cu_Backup
         );
 
         $configs['wordpress'] = array(
-            'file'          => __DIR__ . '/wp-config.php',
+            'file'          => dirname(__FILE__) . '/wp-config.php',
             'constantNames' => array(
                 'dbServer'   => 'DB_HOST',
                 'dbName'     => 'DB_NAME',
@@ -423,6 +450,10 @@ class Cu_Backup
                                                                 $dbUser,
                                                                 $constantName_dbPassword,
                                                                 $dbPassword);
+
+        if ($dbCredentials->validate() === false) {
+            $dbCredentials = $this->cu_getCredentialsFromJoomla();
+        }
 
         return $dbCredentials;
 
@@ -496,7 +527,7 @@ class Cu_Backup
         $result = '';
         $return = '';
 
-        self::cuPrint_r(['ExecStr' => $execString]);
+        self::cuPrint_r(array('ExecStr' => $execString));
 
         if (CuDemo::$activeModus) {
 
@@ -588,7 +619,12 @@ class Cu_Backup
      */
     public function scanDirRecursive($dir, &$allFiles) {
 
-        $files = scandir($dir);
+        if (php53()) {
+            /** @noinspection ScandirUsageInspection */
+            $files = scandir($dir);
+        } else {
+            $files = scandir($dir, SCANDIR_SORT_ASCENDING);
+        }
 
         $separator = '/';
         if (substr($dir, -1) === '/') {
@@ -671,6 +707,34 @@ class Cu_Backup
         echo $result . '<br>';
     }
 
+    /**
+     *
+     * @return \Cu_DBCredentials
+     *
+     * @since version
+     */
+    private function cu_getCredentialsFromJoomla() {
+
+        $dbCredentials = new Cu_DBCredentials();
+
+        if (file_exists('configuration.php')) {
+
+            /** @noinspection UntrustedInclusionInspection */
+            require_once 'configuration.php';
+
+            $jConfig = @new JConfig();
+
+            if ($jConfig instanceof JConfig) {
+
+                $dbCredentials->setDbServer($jConfig->host);
+                $dbCredentials->setDbUser($jConfig->user);
+                $dbCredentials->setDbPassword($jConfig->password);
+                $dbCredentials->setDbName($jConfig->db);
+            }
+        }
+
+        return $dbCredentials;
+    }
 }
 
 function cuExit() {
@@ -683,9 +747,14 @@ function cuExit() {
     exit;
 }
 
+/**
+ * @param $message
+ *
+ */
 function cuAbort($message) {
 
     die($message);
+    /** @noinspection PhpUnreachableStatementInspection */
     exit;
 }
 
@@ -695,6 +764,10 @@ $backupFileName = 'cuBackup_' . date('Ymd_His') . '.zip';
 $cuBackup = new Cu_Backup();
 
 $dbCredentials = $cuBackup->cu_getCredentials($dbServer, $dbUser, $dbPassword, $dbName);
+
+if ($dbCredentials->validate() === false) {
+    die('No DataBase-Credentials found');
+}
 
 /** @noinspection PhpUndefinedConstantInspection */
 $mysqlBackup =
@@ -964,6 +1037,7 @@ switch ($action) {
                         <div class="col-md-10 col-md-offset-1">
 
                             <?php
+
                             foreach ($actionModi as $actionModus):
                                 ?>
                                 <div class="radio">
@@ -997,8 +1071,7 @@ switch ($action) {
                         <div class="form-group">
                             <label>
                                 <?php echo $action['input']['label']; ?>
-                                <input type="text"
-                                       name="actionInput[<?php echo $actionName; ?>]"
+                                <input name="actionInput[<?php echo $actionName; ?>]"
                                        value="<?php echo $action['input']['valueDefault']; ?>">
                             </label>
                         </div>
