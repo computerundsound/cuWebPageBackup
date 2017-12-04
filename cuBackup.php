@@ -754,11 +754,11 @@ $dbCredentials = $cuBackup->cu_getCredentials($dbServer, $dbUser, $dbPassword, $
 /** @noinspection PhpUndefinedConstantInspection */
 /** @noinspection SpellCheckingInspection */
 $mysqlBackup
-    = 'mysqldump - h ' .
+    = 'mysqldump -h ' .
       $dbCredentials->getDbServer() .
-      ' - u ' .
+      ' -u ' .
       $dbCredentials->getDbUser() .
-      ' - p' .
+      ' -p' .
       $dbCredentials->getDbPassword() .
       ' ' .
       $dbCredentials->getDbName() .
