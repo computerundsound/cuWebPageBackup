@@ -20,14 +20,14 @@ $scriptIsActive = 0; // 0 => script will only return a blank page, nothing done 
 
 /* Enter some db-Credentials here - if no other credentials will be found, this will be used */
 /** @noinspection PhpUnreachableStatementInspection */
-$dbServer = '';
-$dbUser = '';
+$dbServer   = '';
+$dbUser     = '';
 $dbPassword = '';
-$dbName = '';
+$dbName     = '';
 
-$zipFileOnServer = 'cuBackup.zip'; // File on Server to unpack
+$zipFileOnServer   = 'cuBackup.zip'; // File on Server to unpack
 $tarGzFileOnServer = 'cuBackup.tar.gz'; // File on Server for tar.gz
-$dbFileOnServer = 'cuBackup.sql'; // File on Server to for db
+$dbFileOnServer    = 'cuBackup.sql'; // File on Server to for db
 
 // End Edit **********************************************************
 // End Edit **********************************************************
@@ -203,7 +203,7 @@ class CuDirectoryInfo
  */
 function getDirsFromDir($dir, &$directoryListAsString) {
 
-    $dirs = array();
+    $dirs        = array();
     $directories = glob($dir . '*', GLOB_ONLYDIR);
 
     sort($directories, SORT_STRING | SORT_FLAG_CASE);
@@ -232,12 +232,12 @@ function getDirsFromDir($dir, &$directoryListAsString) {
 
 }
 
-$directoryListAsString = '';
+$directoryListAsString  = '';
 $allDirsInThisDirectory = getDirsFromDir('./', $directoryListAsString);
 
 $actions = array(
     'test exec'              => array('text' => 'Versuch mit exec einen Befehl auszuführen'),
-    'tar'                    => array('text' => 'Zip whole directory with exec(tar). Tr - only possible if provider allowed exec'),
+    'tar'                    => array('text' => 'Zip whole directory with exec(tar). Try it! Only possible if provider allowed exec'),
     'zip'                    => array(
         'text'  => 'Erstellt eine Zip-Datei vom Verzeichnis - inkl. Datenbankbackup',
         'input' => array(
@@ -366,6 +366,8 @@ class Cu_DBCredentials
 class Cu_Backup
 {
 
+    protected $sqlFileName;
+
     /**
      * @param $value
      */
@@ -423,9 +425,9 @@ class Cu_Backup
             }
         }
 
-        $constantName_dbServer = $config['constantNames']['dbServer'];
-        $constantName_dbName = $config['constantNames']['dbName'];
-        $constantName_dbUser = $config['constantNames']['dbUser'];
+        $constantName_dbServer   = $config['constantNames']['dbServer'];
+        $constantName_dbName     = $config['constantNames']['dbName'];
+        $constantName_dbUser     = $config['constantNames']['dbUser'];
         $constantName_dbPassword = $config['constantNames']['dbPassword'];
 
         $dbCredentials = $this->cu_getCredentialsFromLoadedFile($constantName_dbServer,
@@ -467,10 +469,10 @@ class Cu_Backup
         $dbCredentials = new Cu_DBCredentials();
 
         $dbServer = defined($constantName_dbServer) ? constant($constantName_dbServer) : $defaultValue_dbServer;
-        $dbName = defined($constantName_dbName) ? constant($constantName_dbName) : $defaultValue_dbName;
-        $dbUser = defined($constantName_dhUser) ? constant($constantName_dhUser) : $defaultValue_dbHUser;
+        $dbName   = defined($constantName_dbName) ? constant($constantName_dbName) : $defaultValue_dbName;
+        $dbUser   = defined($constantName_dhUser) ? constant($constantName_dhUser) : $defaultValue_dbHUser;
         $dbPassword
-            = defined($constantName_dhPassword) ? constant($constantName_dhPassword) : $defaultValue_dbPassword;
+                  = defined($constantName_dhPassword) ? constant($constantName_dhPassword) : $defaultValue_dbPassword;
 
         $dbCredentials->setDbServer($dbServer);
         $dbCredentials->setDbName($dbName);
@@ -482,11 +484,11 @@ class Cu_Backup
 
 
     /**
-     * @param string $zipFileOnServer
+     * @param string $tarGzFileOnServer
      */
-    public function tarGz($zipFileOnServer) {
+    public function tarGz($tarGzFileOnServer) {
 
-        $this->runExec("tar -vczf $zipFileOnServer ./.");
+        $this->runExec("tar -vczf $tarGzFileOnServer ./.");
 
     }
 
@@ -531,9 +533,9 @@ class Cu_Backup
                                               $output) : $output;
 
         $response['execStr'] = $execString;
-        $response['result'] = $result;
-        $response['output'] = $output;
-        $response['return'] = $return;
+        $response['result']  = $result;
+        $response['output']  = $output;
+        $response['return']  = $return;
 
         if ($printResult) {
             self::cuPrint_r($response);
@@ -651,9 +653,9 @@ class Cu_Backup
 
         echo 'restore Backup';
 
-        $dbUser = $cuDBCredentials->getDbUser();
+        $dbUser     = $cuDBCredentials->getDbUser();
         $dbPassword = $cuDBCredentials->getDbPassword();
-        $dbName = $cuDBCredentials->getDbName();
+        $dbName     = $cuDBCredentials->getDbName();
 
         $execString = "mysql -u $dbUser -p$dbPassword $dbName < $dbFileOnServer";
 
@@ -698,12 +700,37 @@ class Cu_Backup
         echo $result . '<br>';
     }
 
+    public function deleteSqlBackupFile() {
+
+        if ($this->sqlFileName && file_exists($this->sqlFileName)) {
+            $this->removeFile($this->sqlFileName);
+        }
+    }
+
+    /**
+     * @param string $filePath
+     */
+    public function removeFile($filePath) {
+        if (file_exists($filePath)) {
+            /** @noinspection PhpUsageOfSilenceOperatorInspection */
+            @unlink($filePath);
+            $this->runExec('rm $filePath');
+        }
+    }
+
+    /**
+     * @param string $sqlFileName
+     */
+    public function setSqlFileName($sqlFileName) {
+        $this->sqlFileName = $sqlFileName;
+    }
+
 }
 
 function cuExit() {
 
     $scriptName = $_SERVER['SCRIPT_NAME'];
-    $link = "<p><a href=\"$scriptName\">Zum Start</a></p>";
+    $link       = "<p><a href=\"$scriptName\">Zum Start</a></p>";
 
     echo $link;
 
@@ -719,7 +746,6 @@ function cuAbort($message) {
 }
 
 $dbFileName = 'cuBackup_' . date('Ymd_His') . '.sql';
-$backupFileName = 'cuBackup_' . date('Ymd_His') . '.zip';
 
 $cuBackup = new Cu_Backup();
 
@@ -728,11 +754,11 @@ $dbCredentials = $cuBackup->cu_getCredentials($dbServer, $dbUser, $dbPassword, $
 /** @noinspection PhpUndefinedConstantInspection */
 /** @noinspection SpellCheckingInspection */
 $mysqlBackup
-    = 'mysqldump -h ' .
+    = 'mysqldump - h ' .
       $dbCredentials->getDbServer() .
-      ' -u ' .
+      ' - u ' .
       $dbCredentials->getDbUser() .
-      ' -p' .
+      ' - p' .
       $dbCredentials->getDbPassword() .
       ' ' .
       $dbCredentials->getDbName() .
@@ -741,12 +767,12 @@ $mysqlBackup
 /** @noinspection SpellCheckingInspection */
 $tarUnpack = "tar -xvzf $zipFileOnServer";
 
-$defaultDir = './';
+$defaultDir = ' ./';
 
-$action = isset($_REQUEST['action']) ? $_REQUEST['action'] : '';
-$actionInput = isset($_REQUEST['actionInput']) ? $_REQUEST['actionInput'] : '';
+$action           = isset($_REQUEST['action']) ? $_REQUEST['action'] : '';
+$actionInput      = isset($_REQUEST['actionInput']) ? $_REQUEST['actionInput'] : '';
 $actionInputField = isset($_REQUEST['actionInputField']) ? $_REQUEST['actionInputField'] : '';
-$actionModus = isset($_REQUEST['actionModus']) ? $_REQUEST['actionModus'] : '';
+$actionModus      = isset($_REQUEST['actionModus']) ? $_REQUEST['actionModus'] : '';
 
 $dir = isset($actionInput[$action]) ? $actionInput[$action] : $defaultDir;
 
@@ -761,12 +787,15 @@ switch ($action) {
 
     case 'tar':
         $cuBackup->runExec($mysqlBackup);
-        $cuBackup->tarGz($zipFileOnServer);
+        $cuBackup->setSqlFileName($dbFileName);
+        $cuBackup->tarGz($tarGzFileOnServer);
+        $cuBackup->deleteSqlBackupFile();
         break;
 
     case 'zip':
 
         $cuBackup->runExec($mysqlBackup);
+        $cuBackup->setSqlFileName($dbFileName);
 
         $allFiles = array();
 
@@ -794,22 +823,22 @@ switch ($action) {
 
         if ($backupDirs) {
 
-            $actions[$action]['input-field']['valueDefault'] = $backupDirs;
+            $actions[$action]['input - field']['valueDefault'] = $backupDirs;
 
             $backupDirs = explode("\n", $backupDirs);
 
             foreach ($backupDirs as &$backupDir) {
                 $backupDir = trim($backupDir);
 
-                if ($backupDir === '' || $backupDir === '/') {
+                if ($backupDir === '' || $backupDir === ' / ') {
                     continue;
                 }
 
-                $dir = './' . $backupDir;
+                $dir = ' ./' . $backupDir;
 
                 if (realpath($dir)) {
 
-                    $zipFileOnServer = __DIR__ . '/cu_BackupPart' . '.zip';
+                    $zipFileOnServer = __DIR__ . ' / cu_BackupPart' . ' . zip';
 
                     $allFiles = array();
 
@@ -834,15 +863,16 @@ switch ($action) {
 
     case 'saveDB':
 
-        echo $action . '<br>';
+        echo $action . ' < br>';
 
         $cuBackup->runExec($mysqlBackup);
+        $cuBackup->setSqlFileName($dbFileName);
 
         break;
 
     case 'unpack':
 
-        echo $action . '<br>';
+        echo $action . ' < br>';
 
         if (CuDemo::$activeModus) {
 
@@ -850,7 +880,7 @@ switch ($action) {
                 /** @noinspection PhpUsageOfSilenceOperatorInspection */
                 $zip = new ZipArchive();
                 $zip->open($zipFileOnServer);
-                $zip->extractTo('.');
+                $zip->extractTo(' . ');
             } else {
                 echo 'file not found - it must be: ' . $zipFileOnServer;
             }
@@ -861,7 +891,7 @@ switch ($action) {
         break;
     case 'restoreDB':
 
-        echo $action . '<br>';
+        echo $action . ' < br>';
 
         $cuBackup->restoreDB($dbFileOnServer, $dbCredentials);
 
@@ -871,7 +901,7 @@ switch ($action) {
     case 'phpinfo':
 
         if (CuDemo::$activeModus) {
-            echo __DIR__ . '<br>';
+            echo __DIR__ . ' < br>';
 
             /** @noinspection ForgottenDebugOutputInspection */
             phpinfo();
@@ -883,24 +913,24 @@ switch ($action) {
         exit;
         break;
 
-    case 'deleteFiles (exec)':
+    case 'deleteFiles(exec)':
 
-        echo $action . '<br>';
+        echo $action . ' < br>';
 
-        $execString = 'rm -r .';
-        $result = $cuBackup->runExec($execString);
+        $execString = 'rm - r . ';
+        $result     = $cuBackup->runExec($execString);
 
         Cu_Backup::cuPrint_r($result);
 
         cuExit();
         break;
 
-    case 'deleteFiles (php)':
+    case 'deleteFiles(php)':
 
-        echo $action . '<br>';
+        echo $action . ' < br>';
 
         $allFiles = array();
-        $cuBackup->scanDirRecursive('.', $allFiles);
+        $cuBackup->scanDirRecursive(' . ', $allFiles);
 
         foreach ($allFiles as $file) {
             /** @noinspection PhpUsageOfSilenceOperatorInspection */
@@ -913,7 +943,7 @@ switch ($action) {
 
     case 'setFileRightGambioShop':
 
-        echo $action . '<br>';
+        echo $action . ' < br>';
 
         $cuBackup->setGambioConfigureRights444();
 
@@ -1030,14 +1060,16 @@ switch ($action) {
                                 </div>
                             <?php endforeach; ?>
 
-                            <?php if (isset($action['input-field'])): ?>
+                            <?php if (isset($action['input - field'])): ?>
 
                                 <div class="form-group">
-                                    <label for="actionInputField[<?php echo $actionName; ?>]"><?php echo $action['input-field']['label']; ?></label>
+                                    <label for="actionInputField[<?php echo $actionName; ?>]"><?php echo $action['input -
+                                                                                                                  field']['label']; ?></label>
                                     <textarea id="actionInputField[<?php echo $actionName; ?>]"
                                               class="form-control"
                                               rows="7"
-                                              name="actionInputField[<?php echo $actionName; ?>]"><?php echo $action['input-field']['valueDefault']; ?></textarea>
+                                              name="actionInputField[<?php echo $actionName; ?>]"><?php echo $action['input -
+                                                                                                                      field']['valueDefault']; ?></textarea>
                                 </div>
 
                             <?php endif; ?>
