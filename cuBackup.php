@@ -703,11 +703,11 @@ class Cu_Backup
 function cuExit() {
 
     $scriptName = $_SERVER['SCRIPT_NAME'];
-    $link = "<p><a href="$scriptName">Zum Start</a></p>";
+    $link = "<p><a href=\"$scriptName\">Zum Start</a></p>";
 
-	echo $link;
+    echo $link;
 
-	exit;
+    exit;
 }
 
 /**
