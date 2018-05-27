@@ -29,7 +29,7 @@ $zipFileOnServer   = 'cuBackup.zip'; // File on Server to unpack
 $tarGzFileOnServer = 'cuBackup.tar.gz'; // File on Server for tar.gz
 $dbFileOnServer    = 'cuBackup.sql'; // File on Server to for db
 
-$version = '1.1.4';
+$version = '1.2.1';
 
 // End Edit **********************************************************
 // End Edit **********************************************************
