@@ -272,7 +272,7 @@ $actions = [
     'saveDB'                 => ['text' => 'Try to create an Databasebackup'],
     'unpack'                 => ['text' => 'Trys to extract the file ' . $zipFileOnServer],
     'restoreDB'              => ['text' => 'Trys to restore Database from file ' . $dbFileOnServer],
-    'deleteFiles (exec)'     => ['text' => 'Remove all Files from this Dir (recursive) with exec'],
+    'deleteFiles (exec)'     => ['text' => 'Remove all Files from this Dir (recursive) with php-exec'],
     'deleteFiles (php)'      => ['text' => 'Remove all Files from this Dir (recursive) with PHP (unlink)'],
     'setFileRightGambioShop' => ['text' => 'Try to set the configure.org.php and configure.php files from Gambio-Shops to chmod 444'],
 ];
@@ -750,6 +750,11 @@ function cuAbort($message) {
     die($message);
 }
 
+$action           = isset($_REQUEST['action']) ? $_REQUEST['action'] : '';
+$actionInput      = isset($_REQUEST['actionInput']) ? $_REQUEST['actionInput'] : '';
+$actionInputField = isset($_REQUEST['actionInputField']) ? $_REQUEST['actionInputField'] : '';
+$actionModus      = isset($_REQUEST['actionModus']) ? $_REQUEST['actionModus'] : '';
+
 $dbFileName = 'cuBackup_' . date('Ymd_His') . '.sql';
 
 $cuBackup = new Cu_Backup();
@@ -773,11 +778,6 @@ $mysqlBackup
 $tarUnpack = "tar -xvzf $zipFileOnServer";
 
 $defaultDir = ' ./';
-
-$action           = isset($_REQUEST['action']) ? $_REQUEST['action'] : '';
-$actionInput      = isset($_REQUEST['actionInput']) ? $_REQUEST['actionInput'] : '';
-$actionInputField = isset($_REQUEST['actionInputField']) ? $_REQUEST['actionInputField'] : '';
-$actionModus      = isset($_REQUEST['actionModus']) ? $_REQUEST['actionModus'] : '';
 
 $dir = isset($actionInput[$action]) ? $actionInput[$action] : $defaultDir;
 
@@ -861,14 +861,13 @@ switch ($action) {
 
             cuExit();
 
-
         }
 
         break;
 
     case 'saveDB':
 
-        echo $action . ' < br>';
+        echo $action . ' <br>';
 
         $cuBackup->runExec($mysqlBackup);
         $cuBackup->setSqlFileName($dbFileName);
@@ -896,7 +895,7 @@ switch ($action) {
         break;
     case 'restoreDB':
 
-        echo $action . ' < br>';
+        echo $action . ' <br>';
 
         $cuBackup->restoreDB($dbFileOnServer, $dbCredentials);
 
@@ -906,7 +905,7 @@ switch ($action) {
     case 'phpinfo':
 
         if (CuDemo::$activeModus) {
-            echo __DIR__ . ' < br>';
+            echo __DIR__ . ' <br>';
 
             /** @noinspection ForgottenDebugOutputInspection */
             phpinfo();
@@ -967,8 +966,8 @@ switch ($action) {
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
 
-    <link rel="stylesheet" media="screen" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.css">
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.js"></script>
+    <link rel="stylesheet" media="screen" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.css">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.js"></script>
 
     <style>
 
@@ -986,23 +985,18 @@ switch ($action) {
 
             function removeAllChecked() {
 
-                $("input").each(function () {
+                $("input[type=radio]").each(function () {
                     this.checked = false;
                 });
 
             }
 
-            $("input[data-level=1]").on("click", function () {
+            $("input").on("change", function () {
 
                 removeAllChecked();
-
-                this.checked = true;
-
                 var parentName = $(this).data("parent-name");
-
                 $("input[data-level=0][value='" + parentName + "']").click();
-
-
+                this.checked = true;
             });
 
         });
@@ -1013,35 +1007,35 @@ switch ($action) {
 
 <body>
 
-<nav class="navbar navbar-default">
-    <div class="container-fluid">
-        <!-- Brand and toggle get grouped for better mobile display -->
-        <div class="navbar-header">
-            <button type="button"
-                    class="navbar-toggle collapsed"
-                    data-toggle="collapse"
-                    data-target="#bs-example-navbar-collapse-1"
-                    aria-expanded="false">
-                <span class="sr-only">Toggle navigation</span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </button>
-            <a class="navbar-brand" href="https://www.cusp.de">cuBackup</a>
-        </div>
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="#">Service from Jörg Wrase - cusp.de</a>
+    <button class="navbar-toggler"
+            type="button"
+            data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent"
+            aria-expanded="false"
+            aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
 
-        <p class="navbar-text">
-            Scriptstart: <?php echo date('H:i:s', CU_SCRIPT_START); ?>
-        </p>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav mr-auto">
+            <li class="nav-item active">
+                <a class="nav-link" href="#">cuBackup<span class="sr-only">(current)</span></a>
+            </li>
+        </ul>
 
-        <!-- Collect the nav links, forms, and other content for toggling -->
-        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-            <ul class="nav navbar-nav navbar-right">
-                <li><a href="<?php echo $_SERVER['SCRIPT_NAME']; ?>?action=phpinfo" target="_blank">PHPInfo</a></li>
-                <li><a href="">v<?php echo $version; ?></a></li>
-            </ul>
-        </div><!-- /.navbar-collapse -->
-    </div><!-- /.container-fluid -->
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a href="?action=phpinfo" class="nav-link" target="_blank">PHPInfo</a>
+            </li>
+            <li class="nav-item">
+                <span class="navbar-text">v<?php echo $version; ?></span>
+            </li>
+        </ul>
+
+    </div>
 </nav>
 
 <div class="container">
@@ -1071,7 +1065,6 @@ switch ($action) {
                    you got an error on this page (timeout BUT the process continues! If the process is still running,
                    you will see the file on the server is becomming bigger.</p>
 
-
             </div>
 
         </div>
@@ -1091,7 +1084,7 @@ switch ($action) {
                 </button>
             </p>
 
-            <div class="alert alert-info collapse" id="collapseDBInfo">
+            <div class="alert alert-warning collapse" id="collapseDBInfo">
                 <h4>Found credentials:</h4>
 
                 <dl class="link_list dl-horizontal">
@@ -1123,9 +1116,13 @@ switch ($action) {
 
                 <?php foreach ($actions as $actionName => $action): ?>
 
-                    <div class="radio">
+                    <div class="form-group form-check">
                         <label>
-                            <input type="radio" name="action" data-level="0" value="<?php echo $actionName; ?>">
+                            <input class="form-check-input"
+                                   type="radio"
+                                   name="action"
+                                   data-level="0"
+                                   value="<?php echo $actionName; ?>">
                             <?php echo $action['text']; ?>
 
                             <?php
@@ -1134,7 +1131,7 @@ switch ($action) {
 
                             foreach ($actionModi as $actionModus):
                                 ?>
-                                <div class="radio">
+                                <div class="form-group form-check">
                                     <label>
                                         <input type="radio"
                                                data-level="1"
