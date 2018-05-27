@@ -16,7 +16,7 @@
 
 /* Remove this to enable this script {because it is secure to have an exit here, if script is not used} */
 
-$scriptIsActive = 1; // 0 => script will only return a blank page, nothing done (switched off) || 1 = will run
+$scriptIsActive = 0; // 0 => script will only return a blank page, nothing done (switched off) || 1 = will run
 
 /* Enter some db-Credentials here - if no other credentials will be found, this will be used */
 /** @noinspection PhpUnreachableStatementInspection */
@@ -29,11 +29,12 @@ $zipFileOnServer   = 'cuBackup.zip'; // File on Server to unpack
 $tarGzFileOnServer = 'cuBackup.tar.gz'; // File on Server for tar.gz
 $dbFileOnServer    = 'cuBackup.sql'; // File on Server to for db
 
-$version = '1.2.1';
 
 // End Edit **********************************************************
 // End Edit **********************************************************
 // End Edit **********************************************************
+
+$version = '1.2.2';
 
 /*
  *
