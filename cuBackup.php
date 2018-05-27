@@ -16,7 +16,7 @@
 
 /* Remove this to enable this script {because it is secure to have an exit here, if script is not used} */
 
-$scriptIsActive = 0; // 0 => script will only return a blank page, nothing done (switched off) || 1 = will run
+$scriptIsActive = 1; // 0 => script will only return a blank page, nothing done (switched off) || 1 = will run
 
 /* Enter some db-Credentials here - if no other credentials will be found, this will be used */
 /** @noinspection PhpUnreachableStatementInspection */
@@ -28,6 +28,8 @@ $dbName     = '';
 $zipFileOnServer   = 'cuBackup.zip'; // File on Server to unpack
 $tarGzFileOnServer = 'cuBackup.tar.gz'; // File on Server for tar.gz
 $dbFileOnServer    = 'cuBackup.sql'; // File on Server to for db
+
+$version = '1.1.4';
 
 // End Edit **********************************************************
 // End Edit **********************************************************
@@ -203,7 +205,7 @@ class CuDirectoryInfo
  */
 function getDirsFromDir($dir, &$directoryListAsString) {
 
-    $dirs        = array();
+    $dirs        = [];
     $directories = glob($dir . '*', GLOB_ONLYDIR);
 
     sort($directories, SORT_STRING | SORT_FLAG_CASE);
@@ -235,45 +237,45 @@ function getDirsFromDir($dir, &$directoryListAsString) {
 $directoryListAsString  = '';
 $allDirsInThisDirectory = getDirsFromDir('./', $directoryListAsString);
 
-$actions = array(
-    'test exec'              => array('text' => 'Versuch mit exec einen Befehl auszuführen'),
-    'tar'                    => array('text' => 'Zip whole directory with exec(tar). Try it! Only possible if provider allowed exec'),
-    'zip'                    => array(
-        'text'  => 'Erstellt eine Zip-Datei vom Verzeichnis - inkl. Datenbankbackup',
-        'input' => array(
-            'label'        => 'Welches Verzeichnis soll gepackt werden?',
+$actions = [
+    'test exec'              => ['text' => 'Check if php-exec is possible (belongs to the server)'],
+    'zip'                    => [
+        'text'  => 'Create a zip-file from whole directory and all subdirectories - database backup included',
+        'input' => [
+            'label'        => 'Wich directorie should be zipped?',
             'valueDefault' => './',
-        ),
-        'modus' => array(
-            array(
-                'label' => 'über PHPZipArchiv (etwas langsamer, aber mit mehreren Servern kompatible - Datenbankbackup wird nicht erstellt)',
+        ],
+        'modus' => [
+            [
+                'label' => 'Try it with PHP-ZipArchive - slower and can run into servertimeout. But use this if php-exex is not possible',
                 'value' => 'php',
-            ),
-            array('label' => 'über php exec()', 'value' => 'exec'),
-        ),
-    ),
-    'zip selected'           => array(
-        'text' => 'Erstellt eine Zip-Datei aus einer Verzeichnis-Auswahl - KEIN Datenbankbackup mit dabei',
+            ],
+            ['label' => 'Try with php-exec. If you got a timeout-error please wait: php-exec runs longer than the php-script!',
+             'value' => 'exec'],
+        ],
+    ],
+    'zip selected'           => [
+        'text' => 'Creates an ZipFile from directory (with all subdirectories) without Database-backup. Use this if you got an timeout-error with php-ZipArchive (and php-exe is not possible) OR the file is to big.',
 
-        'input-field' => array(
-            'label'        => 'Verzeichnisse von hier aus gesehen angeben',
+        'input-field' => [
+            'label'        => 'Directorypath from this file',
             'valueDefault' => $directoryListAsString,
-        ),
-        'modus'       => array(
-            array(
-                'label' => 'über PHPZipArchiv (etwas langsamer, aber mit mehreren Servern kompatible',
+        ],
+        'modus'       => [
+            [
+                'label' => 'Try with php-ZipArchive (see above)',
                 'value' => 'php',
-            ),
-            array('label' => 'über php exec()', 'value' => 'exec'),
-        ),
-    ),
-    'saveDB'                 => array('text' => 'Versucht ein Datenbank-Backup zu erstellen'),
-    'unpack'                 => array('text' => 'Entpackt eine Zip Datei'),
-    'restoreDB'              => array('text' => "Stelle eine Datenbank wieder her - die Datei auf dem Server muss $dbFileOnServer heißen"),
-    'deleteFiles (exec)'     => array('text' => 'Remove all Files from this Dir (recursive) with exec'),
-    'deleteFiles (php)'      => array('text' => 'Remove all Files from this Dir (recursive) with PHP (unlink)'),
-    'setFileRightGambioShop' => array('text' => 'Try to set the configure.org.php and configure.php files from Gambio-Shops to chmod 444'),
-);
+            ],
+            ['label' => 'Try with php-exec', 'value' => 'exec'],
+        ],
+    ],
+    'saveDB'                 => ['text' => 'Try to create an Databasebackup'],
+    'unpack'                 => ['text' => 'Trys to extract the file ' . $zipFileOnServer],
+    'restoreDB'              => ['text' => 'Trys to restore Database from file ' . $dbFileOnServer],
+    'deleteFiles (exec)'     => ['text' => 'Remove all Files from this Dir (recursive) with exec'],
+    'deleteFiles (php)'      => ['text' => 'Remove all Files from this Dir (recursive) with PHP (unlink)'],
+    'setFileRightGambioShop' => ['text' => 'Try to set the configure.org.php and configure.php files from Gambio-Shops to chmod 444'],
+];
 /** @noinspection PhpIllegalPsrClassPathInspection */
 /** @noinspection PhpMultipleClassesDeclarationsInOneFile */
 /** @noinspection PhpUndefinedClassInspection */
@@ -369,16 +371,6 @@ class Cu_Backup
     protected $sqlFileName;
 
     /**
-     * @param $value
-     */
-    public static function cuPrint_r($value) {
-
-        $valuePrint_r = print_r($value, true);
-
-        echo "<pre>$valuePrint_r</pre>";
-    }
-
-    /**
      * @param $dbServer
      * @param $dbUser
      * @param $dbPassword
@@ -387,33 +379,35 @@ class Cu_Backup
      * @return \Cu_DBCredentials
      */
     public function cu_getCredentials(
-        $dbServer,
-        $dbUser,
-        $dbPassword,
-        $dbName
+        $dbServerDefaultValue,
+        $dbUserDefaultValue,
+        $dbPasswordDefaultValue,
+        $dbNameDefaultValue
     ) {
 
-        $configs['gambio'] = array(
+        $configs = [];
+
+        $configs['gambio'] = [
             'file'          => __DIR__ . '/admin/includes/configure.php',
-            'constantNames' => array(
+            'constantNames' => [
                 'dbServer'   => 'DB_SERVER',
                 'dbName'     => 'DB_DATABASE',
                 'dbUser'     => 'DB_SERVER_USERNAME',
                 'dbPassword' => 'DB_SERVER_PASSWORD',
 
-            ),
-        );
+            ],
+        ];
 
-        $configs['wordpress'] = array(
+        $configs['wordpress'] = [
             'file'          => __DIR__ . '/wp-config.php',
-            'constantNames' => array(
+            'constantNames' => [
                 'dbServer'   => 'DB_HOST',
                 'dbName'     => 'DB_NAME',
                 'dbUser'     => 'DB_USER',
                 'dbPassword' => 'DB_PASSWORD',
 
-            ),
-        );
+            ],
+        ];
 
         /** @var array $configs */
         /** @var array $config */
@@ -431,13 +425,13 @@ class Cu_Backup
         $constantName_dbPassword = $config['constantNames']['dbPassword'];
 
         $dbCredentials = $this->cu_getCredentialsFromLoadedFile($constantName_dbServer,
-                                                                $dbServer,
+                                                                $dbServerDefaultValue,
                                                                 $constantName_dbName,
-                                                                $dbName,
+                                                                $dbNameDefaultValue,
                                                                 $constantName_dbUser,
-                                                                $dbUser,
+                                                                $dbUserDefaultValue,
                                                                 $constantName_dbPassword,
-                                                                $dbPassword);
+                                                                $dbPasswordDefaultValue);
 
         return $dbCredentials;
 
@@ -482,30 +476,12 @@ class Cu_Backup
         return $dbCredentials;
     }
 
-
     /**
      * @param string $tarGzFileOnServer
      */
     public function tarGz($tarGzFileOnServer) {
 
         $this->runExec("tar -vczf $tarGzFileOnServer ./.");
-
-    }
-
-    /**
-     * @param string $dir
-     * @param array  $allFiles
-     * @param string $zipFileOnServer
-     */
-    public function zipExec($dir, &$allFiles, $zipFileOnServer) {
-
-        /* zip - exe */
-
-        $response = $this->runExec("zip -r $zipFileOnServer $dir");
-
-        if ($response['result'] !== 1) {
-            echo 'error zip exec: ' . $response['result'];
-        }
 
     }
 
@@ -542,6 +518,33 @@ class Cu_Backup
         }
 
         return $response;
+
+    }
+
+    /**
+     * @param $value
+     */
+    public static function cuPrint_r($value) {
+
+        $valuePrint_r = print_r($value, true);
+
+        echo "<pre>$valuePrint_r</pre>";
+    }
+
+    /**
+     * @param string $dir
+     * @param array  $allFiles
+     * @param string $zipFileOnServer
+     */
+    public function zipExec($dir, &$allFiles, $zipFileOnServer) {
+
+        /* zip - exe */
+
+        $response = $this->runExec("zip -r $zipFileOnServer $dir");
+
+        if ($response['result'] !== 1) {
+            echo 'error zip exec: ' . $response['result'];
+        }
 
     }
 
@@ -667,12 +670,12 @@ class Cu_Backup
 
     public function setGambioConfigureRights444() {
 
-        $paths = array(
+        $paths = [
             './admin/includes/configure.php',
             './admin/includes/configure.org.php',
             './includes/configure.org.php',
             './includes/configure.php',
-        );
+        ];
 
         foreach ($paths as $path) {
             $this->setChmod($path, 0444);
@@ -711,6 +714,7 @@ class Cu_Backup
      * @param string $filePath
      */
     public function removeFile($filePath) {
+
         if (file_exists($filePath)) {
             /** @noinspection PhpUsageOfSilenceOperatorInspection */
             @unlink($filePath);
@@ -722,6 +726,7 @@ class Cu_Backup
      * @param string $sqlFileName
      */
     public function setSqlFileName($sqlFileName) {
+
         $this->sqlFileName = $sqlFileName;
     }
 
@@ -797,7 +802,7 @@ switch ($action) {
         $cuBackup->runExec($mysqlBackup);
         $cuBackup->setSqlFileName($dbFileName);
 
-        $allFiles = array();
+        $allFiles = [];
 
         if ($actionModus[$action] === 'php') {
 
@@ -840,7 +845,7 @@ switch ($action) {
 
                     $zipFileOnServer = __DIR__ . ' / cu_BackupPart' . ' . zip';
 
-                    $allFiles = array();
+                    $allFiles = [];
 
                     if ($actionModus[$action] === 'php') {
 
@@ -929,7 +934,7 @@ switch ($action) {
 
         echo $action . ' < br>';
 
-        $allFiles = array();
+        $allFiles = [];
         $cuBackup->scanDirRecursive(' . ', $allFiles);
 
         foreach ($allFiles as $file) {
@@ -976,9 +981,22 @@ switch ($action) {
 
     <script type="text/javascript">
 
+
         $(function () {
 
+            function removeAllChecked() {
+
+                $("input").each(function () {
+                    this.checked = false;
+                });
+
+            }
+
             $("input[data-level=1]").on("click", function () {
+
+                removeAllChecked();
+
+                this.checked = true;
 
                 var parentName = $(this).data("parent-name");
 
@@ -1020,12 +1038,50 @@ switch ($action) {
         <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
             <ul class="nav navbar-nav navbar-right">
                 <li><a href="<?php echo $_SERVER['SCRIPT_NAME']; ?>?action=phpinfo" target="_blank">PHPInfo</a></li>
+                <li><a href="">v<?php echo $version; ?></a></li>
             </ul>
         </div><!-- /.navbar-collapse -->
     </div><!-- /.container-fluid -->
 </nav>
 
 <div class="container">
+
+    <div class="row">
+        <div class="col-md-12">
+
+            <p>
+                <button class="btn btn-primary"
+                        type="button"
+                        data-toggle="collapse"
+                        data-target="#collapseDBInfo"
+                        aria-expanded="false"
+                        aria-controls="collapseDBInfo">
+                    Show Database Info
+                </button>
+            </p>
+
+            <div class="alert alert-info collapse" id="collapseDBInfo">
+                <h4>Found credentials:</h4>
+
+                <dl class="link_list dl-horizontal">
+                    <dt>Server</dt>
+                    <dd><?php echo $dbCredentials->getDbServer(); ?></dd>
+
+                    <dt>Datenbankname</dt>
+                    <dd><?php echo $dbCredentials->getDbName(); ?></dd>
+
+                    <dt>Username</dt>
+                    <dd><?php echo $dbCredentials->getDbUser(); ?></dd>
+
+                    <dt>Passwort</dt>
+                    <dd><?php echo $dbCredentials->getDbPassword(); ?></dd>
+                </dl>
+
+            </div>
+
+
+        </div>
+    </div>
 
     <div class="row">
         <div class="col-md-12">
@@ -1043,7 +1099,7 @@ switch ($action) {
 
                             <?php
 
-                            $actionModi = isset($action['modus']) ? $action['modus'] : array();
+                            $actionModi = isset($action['modus']) ? $action['modus'] : [];
 
                             foreach ($actionModi as $actionModus):
                                 ?>
@@ -1096,7 +1152,7 @@ switch ($action) {
                     <hr>
                 <?php endforeach; ?>
 
-                <button class="btn btn-warning">RUN!</button>
+                <button class="btn btn-danger">RUN!</button>
             </form>
         </div>
     </div>
