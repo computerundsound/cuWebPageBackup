@@ -1049,6 +1049,37 @@ switch ($action) {
     <div class="row">
         <div class="col-md-12">
 
+            <div class="alert alert-info">
+
+                <h2>How to...</h2>
+
+                <p>There are two ways how this script can try to make a backup:</p>
+
+                <ol>
+                    <li>With the php exec - function</li>
+                    <li>With the php ZipArchive - function</li>
+                </ol>
+
+                <p><strong>PHP exec:</strong>: Not all servers do allow this. The advantages are:</p>
+
+                <ul>
+                    <li>Fast</li>
+                    <li>PHP has a time-limit for scripts: normaly with php-exec this doesn't matter.</li>
+                </ul>
+
+                <p>So first try to run php-exec if possible. Because of the script time-out from php it could be that
+                   you got an error on this page (timeout BUT the process continues! If the process is still running,
+                   you will see the file on the server is becomming bigger.</p>
+
+
+            </div>
+
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+
             <p>
                 <button class="btn btn-primary"
                         type="button"
