@@ -46,17 +46,11 @@ class CuFileContentManager
 $response = exec('git status', $output, $return);
 $output   = is_array($output) ? $output[0] : $output;
 
-$versionStr = str_replace('On branch ', '', $output);
-
-$changesMade = false;
-
-$pattern = "/^([\\d]+\\.){2}[\\d]+/";
-preg_match($pattern, $versionStr, $matches);
-$version = isset($matches[0]) ? $matches[0] : $versionStr;
-
+$versionStr    = str_replace('On branch ', '', $output);
+$version       = str_replace('_release', '', $versionStr);
 $newVersionStr = "\\\$version = '" . $version . "';";
 
-$fileContentManager = new CuFileContentManager(__DIR__ . '/../cuBackup.php');
+$fileContentManager        = new CuFileContentManager(__DIR__ . '/../cuBackup.php');
 $versionsFileContentOrigin = $fileContentManager->getContent();
 
 $versionsFileContentNew = preg_replace('/\\$scriptIsActive[ ]*=(.*)/',
