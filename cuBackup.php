@@ -35,7 +35,7 @@ $dbFileOnServer    = 'cuBackup.sql'; // File on Server to for db
 // End Edit **********************************************************
 // End Edit **********************************************************
 
-$version = '1.5.0_beta';
+$version = '1.5.0';
 
 /*
  *
