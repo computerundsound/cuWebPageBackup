@@ -12,6 +12,9 @@ $versionFilePath = __DIR__ . '/../cuBackup.php';
 
 /** @noinspection AutoloadingIssuesInspection */
 
+/**
+ * Class CuFileContentManager
+ */
 class CuFileContentManager
 {
     protected $filePath;
@@ -19,6 +22,8 @@ class CuFileContentManager
 
     /**
      * CuFileContentManager constructor.
+     *
+     * @param $filePath
      */
     public function __construct($filePath) {
 
@@ -34,6 +39,12 @@ class CuFileContentManager
 
     }
 
+    /**
+     * @param $newContent
+     *
+     * @throws \RuntimeException
+     * @throws \LogicException
+     */
     public function writeContent($newContent) {
 
         $file = new SplFileObject($this->filePath, 'wb+');

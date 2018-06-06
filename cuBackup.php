@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMultipleClassesDeclarationsInOneFile */
 /*
  * Copyright by Jörg Wrase - www.Computer-Und-Sound.de
  * Date: 03.07.2017
@@ -17,7 +17,7 @@
 /* Remove this to enable this script {because it is secure to have an exit here, if script is not used} */
 
 // 0 => script will only return a blank page, nothing done (switched off) || 1 = will run
-$scriptIsActive = 0;
+$scriptIsActive = 1;
 
 /* Enter some db-Credentials here - if no other credentials will be found, this will be used */
 /** @noinspection PhpUnreachableStatementInspection */
@@ -42,6 +42,20 @@ $version = '1.5.0';
  * Script Start
  *
  */
+
+/**
+ * @param mixed $value
+ */
+function curPrint($value) {
+
+    $valueArray = (array)$value;
+
+    $valueOutput = print_r($valueArray, true);
+
+    echo "<pre>$valueOutput</pre>";
+
+
+}
 
 session_start();
 
@@ -78,6 +92,7 @@ define('CU_SCRIPT_MAX_TIME', 2);
 
 $serverName = isset($_SERVER['SERVER_NAME']) ? $_SERVER['SERVER_NAME'] : '';
 
+/** @noinspection DisallowWritingIntoStaticPropertiesInspection */
 CuDemo::$activeModus = !($serverName === 'snippets.cusp.de');
 
 /* START */
@@ -244,12 +259,12 @@ $actions = [
     'zip'                    => [
         'text'  => 'Create a zip-file from whole directory and all subdirectories - database backup included',
         'input' => [
-            'label'        => 'Wich directorie should be zipped?',
+            'label'        => 'Wich directory should be zipped?',
             'valueDefault' => './',
         ],
         'modus' => [
             [
-                'label' => 'Try it with PHP-ZipArchive - slower and can run into servertimeout. But use this if php-exex is not possible',
+                'label' => 'Try it with PHP-ZipArchive - slower and can run into server-timeout. But use this if php-exex is not possible',
                 'value' => 'php',
             ],
             ['label' => 'Try with php-exec. If you got a timeout-error please wait: php-exec runs longer than the php-script!',
@@ -260,7 +275,7 @@ $actions = [
         'text' => 'Creates an ZipFile from directory (with all subdirectories) without Database-backup. Use this if you got an timeout-error with php-ZipArchive (and php-exe is not possible) OR the file is to big.',
 
         'input-field' => [
-            'label'        => 'Directorypath from this file',
+            'label'        => 'Directory-path from this file',
             'valueDefault' => $directoryListAsString,
         ],
         'modus'       => [
@@ -271,13 +286,117 @@ $actions = [
             ['label' => 'Try with php-exec', 'value' => 'exec'],
         ],
     ],
-    'saveDB'                 => ['text' => 'Try to create an Databasebackup'],
-    'unpack'                 => ['text' => 'Trys to extract the file ' . $zipFileOnServer],
-    'restoreDB'              => ['text' => 'Trys to restore Database from file ' . $dbFileOnServer],
+    'saveDB'                 => ['text' => 'Try to create an Database-backup'],
+    'unpack'                 => ['text' => 'Try to extract the file ' . $zipFileOnServer],
+    'restoreDB'              => ['text' => 'Try to restore Database from file ' . $dbFileOnServer],
     'deleteFiles (exec)'     => ['text' => 'Remove all Files from this Dir (recursive) with php-exec'],
     'deleteFiles (php)'      => ['text' => 'Remove all Files from this Dir (recursive) with PHP (unlink)'],
     'setFileRightGambioShop' => ['text' => 'Try to set the configure.org.php and configure.php files from Gambio-Shops to chmod 444'],
 ];
+
+define('ERROR_STATUS_INFO', 'info');
+define('ERROR_STATUS_WARNING', 'warning');
+define('ERROR_STATUS_DANGER', 'danger');
+
+
+/**
+ * Class CuError
+ */
+class CuError
+{
+
+    protected $errorMessage = '';
+    protected $errorStatus  = '';
+
+    /**
+     * CuError constructor.
+     *
+     * @param string $errorMessage
+     * @param string $errorStatus
+     */
+    public function __construct($errorMessage, $errorStatus = ERROR_STATUS_DANGER) {
+
+        $this->errorMessage = $errorMessage;
+        $this->errorStatus  = $errorStatus;
+    }
+
+    /**
+     * @return string
+     */
+    public function getErrorMessage() {
+
+        return $this->errorMessage;
+    }
+
+    /**
+     * @return string
+     */
+    public function getErrorStatus() {
+
+        return $this->errorStatus;
+    }
+
+
+}
+
+/**
+ * Class CuErrorContainer
+ */
+class CuErrorContainer
+{
+
+    protected static $errors = [];
+
+    /**
+     * @param string $message
+     * @param string $errorStatus
+     */
+    public static function createAndAdd($message, $errorStatus = ERROR_STATUS_DANGER) {
+
+        $error = new CuError($message, $errorStatus);
+
+        self::add($error);
+
+    }
+
+    /**
+     * @param CuError $cuError
+     */
+    public static function add(CuError $cuError) {
+
+        self::$errors[] = $cuError;
+
+    }
+
+    /**
+     * @return CuError|null
+     */
+    public static function shift() {
+
+        return array_shift(self::$errors);
+
+    }
+
+
+    /**
+     * @return CuError[]
+     */
+    public static function getErrors() {
+
+        return self::$errors;
+    }
+
+    /**
+     * @return bool
+     */
+    public static function hasErrors() {
+
+        return count(self::$errors) > 0;
+    }
+
+}
+
+
 /** @noinspection PhpIllegalPsrClassPathInspection */
 /** @noinspection PhpMultipleClassesDeclarationsInOneFile */
 /** @noinspection PhpUndefinedClassInspection */
@@ -373,10 +492,10 @@ class Cu_Backup
     protected $sqlFileName;
 
     /**
-     * @param $dbServer
-     * @param $dbUser
-     * @param $dbPassword
-     * @param $dbName
+     * @param $dbServerDefaultValue
+     * @param $dbUserDefaultValue
+     * @param $dbPasswordDefaultValue
+     * @param $dbNameDefaultValue
      *
      * @return \Cu_DBCredentials
      */
@@ -500,6 +619,7 @@ class Cu_Backup
         $return = '';
 
         self::cuPrint_r(['ExecStr' => $execString]);
+        $output = '';
 
         if (CuDemo::$activeModus) {
 
@@ -532,6 +652,7 @@ class Cu_Backup
 
         echo "<pre>$valuePrint_r</pre>";
     }
+
 
     /**
      * @param string $dir
@@ -732,6 +853,69 @@ class Cu_Backup
         $this->sqlFileName = $sqlFileName;
     }
 
+    /**
+     * @param string $directoryToKill
+     */
+    public function removeFilesRecursive($directoryToKill) {
+
+        echo "<br>Remove directory: $directoryToKill<br>";
+
+        $filesInThisDir = scandir($directoryToKill, SCANDIR_SORT_ASCENDING);
+
+        self::cuPrint_r(['Files found: ' => $filesInThisDir]);
+
+        foreach ($filesInThisDir as $file) {
+
+            if ($file === '.' || $file === '..') {
+                continue;
+            }
+
+            if ($file === 'cuBackup.php' || $file === 'cuBackup.zip') {
+                continue;
+            }
+
+            $item = $directoryToKill . DIRECTORY_SEPARATOR . $file;
+
+            echo "Delete $item <br>";
+
+
+            try {
+                if (is_dir($item) === true) {
+
+                    $this->removeFilesRecursive($item . DIRECTORY_SEPARATOR);
+
+                    /** @noinspection PhpUsageOfSilenceOperatorInspection */
+                    if (@rmdir($item) !== true) {
+                        $exceptionMessage = "Not able to remove directory $item";
+                        throw new RuntimeException($exceptionMessage, 3);
+                    }
+
+                } else {
+                    /** @noinspection NestedPositiveIfStatementsInspection */
+                    /** @noinspection PhpUsageOfSilenceOperatorInspection */
+                    if (is_file($item) === true && @unlink($item) !== true) {
+                        $exceptionMessage = "Not able to unlink file $item";
+                        throw new RuntimeException($exceptionMessage, 3);
+                    }
+                }
+            } catch (Exception $exception) {
+
+                switch ($exception->getCode()) {
+                    case 1:
+                        $status = ERROR_STATUS_INFO;
+                        break;
+                    case 2:
+                        $status = ERROR_STATUS_WARNING;
+                        break;
+                    default:
+                        $status = ERROR_STATUS_DANGER;
+                }
+
+                CuErrorContainer::createAndAdd($exception->getMessage(), $status);
+
+            }
+        }
+    }
 }
 
 function cuExit() {
@@ -886,7 +1070,7 @@ switch ($action) {
                 /** @noinspection PhpUsageOfSilenceOperatorInspection */
                 $zip = new ZipArchive();
                 $zip->open($zipFileOnServer);
-                $zip->extractTo(' . ');
+                $zip->extractTo('.');
             } else {
                 echo 'file not found - it must be: ' . $zipFileOnServer;
             }
@@ -919,11 +1103,11 @@ switch ($action) {
         exit;
         break;
 
-    case 'deleteFiles(exec)':
+    case 'deleteFiles (exec)':
 
-        echo $action . ' < br>';
+        echo $action . ' <br>';
 
-        $execString = 'rm - r . ';
+        $execString = 'rm -rf . ';
         $result     = $cuBackup->runExec($execString);
 
         Cu_Backup::cuPrint_r($result);
@@ -931,17 +1115,14 @@ switch ($action) {
         cuExit();
         break;
 
-    case 'deleteFiles(php)':
+    case 'deleteFiles (php)':
 
-        echo $action . ' < br>';
+        echo $action . ' <br>';
 
-        $allFiles = [];
-        $cuBackup->scanDirRecursive(' . ', $allFiles);
+        $thisDir = dirname($_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . $_SERVER['PHP_SELF']);
 
-        foreach ($allFiles as $file) {
-            /** @noinspection PhpUsageOfSilenceOperatorInspection */
-            @unlink($file);
-        }
+        $cuBackup->removeFilesRecursive($thisDir);
+
 
         cuExit();
 
@@ -980,6 +1161,7 @@ switch ($action) {
 
     </style>
 
+    <!--suppress JSUnresolvedFunction, JSUnusedGlobalSymbols -->
     <script type="text/javascript">
 
 
@@ -1042,6 +1224,23 @@ switch ($action) {
 
 <div class="container">
 
+    <?php if (CuErrorContainer::hasErrors()): ?>
+
+        <div class="row">
+            <div class="col-md">
+
+                <?php while ($error = CuErrorContainer::shift()): ?>
+
+                    <div class="alert alert-<?php echo $error->getErrorStatus(); ?>"><?php echo $error->getErrorMessage(); ?></div>
+
+                <?php endwhile; ?>
+
+            </div>
+        </div>
+
+    <?php endif; ?>
+
+
     <div class="row">
         <div class="col-md-12">
 
@@ -1060,12 +1259,12 @@ switch ($action) {
 
                 <ul>
                     <li>Fast</li>
-                    <li>PHP has a time-limit for scripts: normaly with php-exec this doesn't matter.</li>
+                    <li>PHP has a time-limit for scripts: normal with php-exec this doesn't matter.</li>
                 </ul>
 
                 <p>So first try to run php-exec if possible. Because of the script time-out from php it could be that
                    you got an error on this page (timeout BUT the process continues! If the process is still running,
-                   you will see the file on the server is becomming bigger.</p>
+                   you will see the file on the server is becoming bigger.</p>
 
             </div>
 
