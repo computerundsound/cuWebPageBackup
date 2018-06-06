@@ -17,7 +17,7 @@
 /* Remove this to enable this script {because it is secure to have an exit here, if script is not used} */
 
 // 0 => script will only return a blank page, nothing done (switched off) || 1 = will run
-$scriptIsActive = 1;
+$scriptIsActive = 0;
 
 /* Enter some db-Credentials here - if no other credentials will be found, this will be used */
 /** @noinspection PhpUnreachableStatementInspection */
@@ -35,7 +35,7 @@ $dbFileOnServer    = 'cuBackup.sql'; // File on Server to for db
 // End Edit **********************************************************
 // End Edit **********************************************************
 
-$version = '1.5.0';
+$version = '1.6.0';
 
 /*
  *
