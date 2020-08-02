@@ -1,26 +1,20 @@
-<?php /** @noinspection PhpMultipleClassesDeclarationsInOneFile */
+<?php
 /*
  * Copyright by Jörg Wrase - www.Computer-Und-Sound.de
- * Date: 03.07.2017
- * Time: 01:54
- *
- * Created by PhpStorm
  *
  */
 
 //Backup Script
 //
-//This Script will search for Wordpress and Gambio DB-credentials. If not found, it will use the credentials from below
+//This Script will search for Wordpress, Joomla! and Gambio, DB-credentials. If not found, it will use the
+// credentials from below
 
 /* ************************/
-
-/* Remove this to enable this script {because it is secure to have an exit here, if script is not used} */
 
 // 0 => script will only return a blank page, nothing done (switched off) || 1 = will run
 $scriptIsActive = 0;
 
 /* Enter some db-Credentials here - if no other credentials will be found, this will be used */
-/** @noinspection PhpUnreachableStatementInspection */
 $dbServer   = '';
 $dbUser     = '';
 $dbPassword = '';
@@ -35,27 +29,13 @@ $dbFileOnServer    = 'cuBackup.sql'; // File on Server to for db
 // End Edit **********************************************************
 // End Edit **********************************************************
 
-$version = '1.6.0';
+define('CU_BACKUP_VERSION', '2.0.0');
 
 /*
  *
  * Script Start
  *
  */
-
-/**
- * @param mixed $value
- */
-function curPrint($value) {
-
-    $valueArray = (array)$value;
-
-    $valueOutput = print_r($valueArray, true);
-
-    echo "<pre>$valueOutput</pre>";
-
-
-}
 
 session_start();
 
@@ -65,35 +45,10 @@ if (isset($_POST['killSession']) && $_POST['killSession'] === 'true') {
     session_start();
 }
 
-/*DemoModus*/
-/** @noinspection PhpMultipleClassesDeclarationsInOneFile */
-/** @noinspection PhpUndefinedClassInspection */
-
-/**
- * Class CuDemo
- */
-class CuDemo
-{
-
-    public static $activeModus;
-
-}
-
-/**
- * @param $message
- */
-function cuEcho($message) {
-
-    echo "$message <br>";
-}
-
 define('CU_SCRIPT_START', time());
 define('CU_SCRIPT_MAX_TIME', 2);
 
 $serverName = isset($_SERVER['SERVER_NAME']) ? $_SERVER['SERVER_NAME'] : '';
-
-/** @noinspection DisallowWritingIntoStaticPropertiesInspection */
-CuDemo::$activeModus = !($serverName === 'snippets.cusp.de');
 
 /* START */
 
@@ -116,8 +71,6 @@ error_reporting(E_ALL);
 if ($scriptIsActive !== 1) {
     exit;
 }
-/** @noinspection PhpMultipleClassesDeclarationsInOneFile */
-/** @noinspection PhpUndefinedClassInspection */
 
 /**
  * Class CuDirectoryInfo
@@ -134,7 +87,8 @@ class CuDirectoryInfo
     /**
      * @return int
      */
-    public function getSize() {
+    public function getSize()
+    {
 
         return $this->size;
     }
@@ -142,7 +96,8 @@ class CuDirectoryInfo
     /**
      * @param int $size
      */
-    public function setSize($size) {
+    public function setSize($size)
+    {
 
         $this->size = (int)$size;
     }
@@ -150,7 +105,8 @@ class CuDirectoryInfo
     /**
      * @return mixed
      */
-    public function getName() {
+    public function getName()
+    {
 
         return $this->name;
     }
@@ -158,7 +114,8 @@ class CuDirectoryInfo
     /**
      * @param string $name
      */
-    public function setName($name) {
+    public function setName($name)
+    {
 
         $this->name = (string)$name;
     }
@@ -166,7 +123,8 @@ class CuDirectoryInfo
     /**
      * @return string
      */
-    public function getOwner() {
+    public function getOwner()
+    {
 
         return $this->owner;
     }
@@ -174,7 +132,8 @@ class CuDirectoryInfo
     /**
      * @param string $owner
      */
-    public function setOwner($owner) {
+    public function setOwner($owner)
+    {
 
         $this->owner = (string)$owner;
     }
@@ -182,7 +141,8 @@ class CuDirectoryInfo
     /**
      * @return string
      */
-    public function getRights() {
+    public function getRights()
+    {
 
         return $this->rights;
     }
@@ -190,7 +150,8 @@ class CuDirectoryInfo
     /**
      * @param string $rights
      */
-    public function setRights($rights) {
+    public function setRights($rights)
+    {
 
         $this->rights = (string)$rights;
     }
@@ -198,7 +159,8 @@ class CuDirectoryInfo
     /**
      * @return string
      */
-    public function getPath() {
+    public function getPath()
+    {
 
         return $this->path;
     }
@@ -206,7 +168,8 @@ class CuDirectoryInfo
     /**
      * @param string $path
      */
-    public function setPath($path) {
+    public function setPath($path)
+    {
 
         $this->path = (string)$path;
     }
@@ -220,7 +183,8 @@ class CuDirectoryInfo
  *
  * @return array
  */
-function getDirsFromDir($dir, &$directoryListAsString) {
+function getDirsFromDir($dir, &$directoryListAsString)
+{
 
     $dirs        = [];
     $directories = glob($dir . '*', GLOB_ONLYDIR);
@@ -264,21 +228,24 @@ $actions = [
         ],
         'modus' => [
             [
-                'label' => 'Try it with PHP-ZipArchive - slower and can run into server-timeout. But use this if php-exex is not possible',
+                'label' => 'Try it with PHP-ZipArchive - slower and can run into server-timeout. 
+                But use this if php-exec is not possible',
                 'value' => 'php',
             ],
-            ['label' => 'Try with php-exec. If you got a timeout-error please wait: php-exec runs longer than the php-script!',
+            ['label' => 'Try with php-exec. If you got a timeout-error please wait: php-exec runs 
+            longer than the php-script!',
              'value' => 'exec'],
         ],
     ],
     'zip selected'           => [
-        'text' => 'Creates an ZipFile from directory (with all subdirectories) without Database-backup. Use this if you got an timeout-error with php-ZipArchive (and php-exe is not possible) OR the file is to big.',
+        'text' => 'Creates an ZipFile from directory (with all subdirectories) without Database-backup. 
+        Use this if you got an timeout-error with php-ZipArchive (and php-exe is not possible) OR the file is to big.',
 
-        'input-field' => [
-            'label'        => 'Directory-path from this file',
-            'valueDefault' => $directoryListAsString,
+        'input - field' => [
+            'label'        => 'Wich directory should be zipped? Each Directory in one line',
+            'valueDefault' => '',
         ],
-        'modus'       => [
+        'modus'         => [
             [
                 'label' => 'Try with php-ZipArchive (see above)',
                 'value' => 'php',
@@ -291,13 +258,87 @@ $actions = [
     'restoreDB'              => ['text' => 'Try to restore Database from file ' . $dbFileOnServer],
     'deleteFiles (exec)'     => ['text' => 'Remove all Files from this Dir (recursive) with php-exec'],
     'deleteFiles (php)'      => ['text' => 'Remove all Files from this Dir (recursive) with PHP (unlink)'],
-    'setFileRightGambioShop' => ['text' => 'Try to set the configure.org.php and configure.php files from Gambio-Shops to chmod 444'],
+    'setFileRightGambioShop' => ['text' => 'Try to set the configure.org.php and configure.php files from 
+                                            Gambio-Shops to chmod 444'],
 ];
 
 define('ERROR_STATUS_INFO', 'info');
 define('ERROR_STATUS_WARNING', 'warning');
 define('ERROR_STATUS_DANGER', 'danger');
 
+class Output
+{
+    protected static $message = '';
+
+
+    public static function add($content, $withBr = true)
+    {
+
+        self::$message .= $withBr ? $content . '<br>' : $content;
+    }
+
+    public static function addParagraphHeading($content)
+    {
+
+        self::add("<h4>" . $content . "</h4>");
+
+    }
+
+    public static function addStrong($content)
+    {
+
+        self::add("<strong>" . $content . "</strong>");
+
+    }
+
+    public static function addErrorMessage($error)
+    {
+
+        self::add("<h3 style='color: red;' >" . $error . "</h3>");
+
+    }
+
+    public static function addError(Exception $catcher)
+    {
+
+        $message = $catcher->getMessage() . ' in ' . $catcher->getFile() . ':' . $catcher->getLine();
+        self::addErrorMessage($message);
+
+        $stack = $catcher->getTraceAsString();
+        self::add($stack);
+
+    }
+
+    /**
+     * @param string[] $multiLinesContent
+     */
+    public static function addMultiLines(array $multiLinesContent)
+    {
+
+        $content = implode("\n", $multiLinesContent);
+        self::add($content);
+    }
+
+    public static function getMessage()
+    {
+
+        return self::$message;
+    }
+
+    public static function reset()
+    {
+
+        self::$message = '';
+    }
+
+    public static function hasContent()
+    {
+
+        return self::$message !== '';
+    }
+
+
+}
 
 /**
  * Class CuError
@@ -314,7 +355,8 @@ class CuError
      * @param string $errorMessage
      * @param string $errorStatus
      */
-    public function __construct($errorMessage, $errorStatus = ERROR_STATUS_DANGER) {
+    public function __construct($errorMessage, $errorStatus = ERROR_STATUS_DANGER)
+    {
 
         $this->errorMessage = $errorMessage;
         $this->errorStatus  = $errorStatus;
@@ -323,7 +365,8 @@ class CuError
     /**
      * @return string
      */
-    public function getErrorMessage() {
+    public function getErrorMessage()
+    {
 
         return $this->errorMessage;
     }
@@ -331,7 +374,8 @@ class CuError
     /**
      * @return string
      */
-    public function getErrorStatus() {
+    public function getErrorStatus()
+    {
 
         return $this->errorStatus;
     }
@@ -351,7 +395,8 @@ class CuErrorContainer
      * @param string $message
      * @param string $errorStatus
      */
-    public static function createAndAdd($message, $errorStatus = ERROR_STATUS_DANGER) {
+    public static function createAndAdd($message, $errorStatus = ERROR_STATUS_DANGER)
+    {
 
         $error = new CuError($message, $errorStatus);
 
@@ -362,7 +407,8 @@ class CuErrorContainer
     /**
      * @param CuError $cuError
      */
-    public static function add(CuError $cuError) {
+    public static function add(CuError $cuError)
+    {
 
         self::$errors[] = $cuError;
 
@@ -371,7 +417,8 @@ class CuErrorContainer
     /**
      * @return CuError|null
      */
-    public static function shift() {
+    public static function shift()
+    {
 
         return array_shift(self::$errors);
 
@@ -381,7 +428,8 @@ class CuErrorContainer
     /**
      * @return CuError[]
      */
-    public static function getErrors() {
+    public static function getErrors()
+    {
 
         return self::$errors;
     }
@@ -389,7 +437,8 @@ class CuErrorContainer
     /**
      * @return bool
      */
-    public static function hasErrors() {
+    public static function hasErrors()
+    {
 
         return count(self::$errors) > 0;
     }
@@ -397,14 +446,10 @@ class CuErrorContainer
 }
 
 
-/** @noinspection PhpIllegalPsrClassPathInspection */
-/** @noinspection PhpMultipleClassesDeclarationsInOneFile */
-/** @noinspection PhpUndefinedClassInspection */
-
 /**
  * Class Cu_DBCredentials
  */
-class Cu_DBCredentials
+class DbCredentials
 {
 
     private $dbServer   = '';
@@ -415,7 +460,8 @@ class Cu_DBCredentials
     /**
      * @return string
      */
-    public function getDbServer() {
+    public function getDbServer()
+    {
 
         return $this->dbServer;
     }
@@ -423,7 +469,8 @@ class Cu_DBCredentials
     /**
      * @param string $dbHost
      */
-    public function setDbServer($dbHost) {
+    public function setDbServer($dbHost)
+    {
 
         $this->dbServer = (string)$dbHost;
     }
@@ -431,7 +478,8 @@ class Cu_DBCredentials
     /**
      * @return string
      */
-    public function getDbUser() {
+    public function getDbUser()
+    {
 
         return $this->dbUser;
     }
@@ -439,7 +487,8 @@ class Cu_DBCredentials
     /**
      * @param string $dbUser
      */
-    public function setDbUser($dbUser) {
+    public function setDbUser($dbUser)
+    {
 
         $this->dbUser = (string)$dbUser;
     }
@@ -447,7 +496,8 @@ class Cu_DBCredentials
     /**
      * @return string
      */
-    public function getDbPassword() {
+    public function getDbPassword()
+    {
 
         return $this->dbPassword;
     }
@@ -455,7 +505,8 @@ class Cu_DBCredentials
     /**
      * @param string $dbPassword
      */
-    public function setDbPassword($dbPassword) {
+    public function setDbPassword($dbPassword)
+    {
 
         $this->dbPassword = (string)$dbPassword;
     }
@@ -463,7 +514,8 @@ class Cu_DBCredentials
     /**
      * @return string
      */
-    public function getDbName() {
+    public function getDbName()
+    {
 
         return $this->dbName;
     }
@@ -471,7 +523,8 @@ class Cu_DBCredentials
     /**
      * @param string $dbName
      */
-    public function setDbName($dbName) {
+    public function setDbName($dbName)
+    {
 
         $this->dbName = (string)$dbName;
     }
@@ -479,17 +532,23 @@ class Cu_DBCredentials
 
 }
 
-/** @noinspection PhpIllegalPsrClassPathInspection */
-/** @noinspection PhpMultipleClassesDeclarationsInOneFile */
-/** @noinspection PhpUndefinedClassInspection */
-
 /**
  * Class Cu_Backup
  */
-class Cu_Backup
+class Backup
 {
 
     protected $sqlFileName;
+
+    public static function cuPrint_r($value, $htmlEntities = true)
+    {
+
+        $messageRaw = print_r($value, true);
+
+        $message = $htmlEntities ? htmlentities2($messageRaw) : $messageRaw;
+
+        Output::add("$message\n");
+    }
 
     /**
      * @param $dbServerDefaultValue
@@ -497,14 +556,15 @@ class Cu_Backup
      * @param $dbPasswordDefaultValue
      * @param $dbNameDefaultValue
      *
-     * @return \Cu_DBCredentials
+     * @return DbCredentials
      */
     public function cu_getCredentials(
         $dbServerDefaultValue,
         $dbUserDefaultValue,
         $dbPasswordDefaultValue,
         $dbNameDefaultValue
-    ) {
+    )
+    {
 
         $configs = [];
 
@@ -568,7 +628,7 @@ class Cu_Backup
      * @param $constantName_dhPassword
      * @param $defaultValue_dbPassword
      *
-     * @return \Cu_DBCredentials
+     * @return DbCredentials
      */
     public function cu_getCredentialsFromLoadedFile(
         $constantName_dbServer,
@@ -579,9 +639,10 @@ class Cu_Backup
         $defaultValue_dbHUser,
         $constantName_dhPassword,
         $defaultValue_dbPassword
-    ) {
+    )
+    {
 
-        $dbCredentials = new Cu_DBCredentials();
+        $dbCredentials = new DbCredentials();
 
         $dbServer = defined($constantName_dbServer) ? constant($constantName_dbServer) : $defaultValue_dbServer;
         $dbName   = defined($constantName_dbName) ? constant($constantName_dbName) : $defaultValue_dbName;
@@ -600,7 +661,8 @@ class Cu_Backup
     /**
      * @param string $tarGzFileOnServer
      */
-    public function tarGz($tarGzFileOnServer) {
+    public function tarGz($tarGzFileOnServer)
+    {
 
         $this->runExec("tar -vczf $tarGzFileOnServer ./.");
 
@@ -613,19 +675,15 @@ class Cu_Backup
      *
      * @return array
      */
-    public function runExec($execString, $printResult = true) {
+    public function runExec($execString, $printResult = true)
+    {
 
-        $result = '';
         $return = '';
 
         self::cuPrint_r(['ExecStr' => $execString]);
         $output = '';
 
-        if (CuDemo::$activeModus) {
-
-            $result = exec($execString, $output, $return);
-
-        }
+        $result = exec($execString, $output, $return);
 
         $output = is_array($output) ? implode("\n",
                                               $output) : $output;
@@ -644,34 +702,21 @@ class Cu_Backup
     }
 
     /**
-     * @param $value
-     */
-    public static function cuPrint_r($value) {
-
-        $valuePrint_r = print_r($value, true);
-
-        echo "<pre>$valuePrint_r</pre>";
-    }
-
-
-    /**
      * @param string $dir
-     * @param array  $allFiles
      * @param string $zipFileOnServer
      */
-    public function zipExec($dir, &$allFiles, $zipFileOnServer) {
+    public function zipExec($dir, $zipFileOnServer)
+    {
 
         /* zip - exe */
 
         $response = $this->runExec("zip -r $zipFileOnServer $dir");
 
         if ($response['result'] !== 1) {
-            echo 'error zip exec: ' . $response['result'];
+            Output::add('error zip exec: ' . $response['result']);
         }
 
     }
-
-    /** @noinspection PhpUnusedParameterInspection */
 
     /**
      * @param string $dir
@@ -681,57 +726,34 @@ class Cu_Backup
      *
      * @return int
      */
-    public function zipPHP($dir, &$allFiles, $zipFileOnServer, $setTimestamp = true) {
+    public function zipPHP($dir, &$allFiles, $zipFileOnServer)
+    {
 
-        $datedZipFileOnServer = $this->createDatedZipFileOnServerName($zipFileOnServer, $setTimestamp);
-
-        echo $datedZipFileOnServer . '<br>';
+        Output::add($zipFileOnServer . '<br>');
 
         $allFilesCount = $this->scanDirRecursive($dir, $allFiles);
 
-        if (CuDemo::$activeModus) {
+        $zip = new ZipArchive();
+        Output::add('ErrorCode: ' . $zip->open($zipFileOnServer, ZipArchive::CREATE) . ' (1 === OK)<br>');
 
-            $zip = new ZipArchive();
-            echo 'ErrorCode: ' . $zip->open($datedZipFileOnServer, ZipArchive::CREATE) . ' (1 === OK)<br>';
-
-            if ($dir !== '.' && $dir !== '..' && is_dir($dir)) {
-                $zip->addEmptyDir($dir);
-            }
-
-            foreach ($allFiles as $file) {
-
-                if (is_dir($file)) {
-                    $zip->addEmptyDir($file);
-                } else {
-
-                    $zip->addFile($file);
-                }
-            }
-
-            $zip->close();
+        if ($dir !== '.' && $dir !== '..' && is_dir($dir)) {
+            $zip->addEmptyDir($dir);
         }
+
+        foreach ($allFiles as $file) {
+
+            if (is_dir($file)) {
+                $zip->addEmptyDir($file);
+            } else {
+
+                $zip->addFile($file);
+            }
+        }
+
+        $zip->close();
+
 
         return $allFilesCount;
-
-    }
-
-    /**
-     * @param string $standardName
-     * @param bool   $setTimestamp
-     *
-     * @return string
-     */
-    public function createDatedZipFileOnServerName($standardName, $setTimestamp = true) {
-
-        $dataPart = '';
-
-        if ($setTimestamp) {
-            $dataPart = '_' . date('Y-m-d--H-i-s');
-        }
-
-        $newName = preg_replace('#.zip$#', $dataPart . '.zip', $standardName);
-
-        return (string)$newName;
 
     }
 
@@ -741,7 +763,8 @@ class Cu_Backup
      *
      * @return int
      */
-    public function scanDirRecursive($dir, &$allFiles) {
+    public function scanDirRecursive($dir, &$allFiles)
+    {
 
         $files = scandir($dir, SCANDIR_SORT_ASCENDING);
 
@@ -772,12 +795,13 @@ class Cu_Backup
     }
 
     /**
-     * @param string            $dbFileOnServer
-     * @param \Cu_DBCredentials $cuDBCredentials
+     * @param string        $dbFileOnServer
+     * @param DbCredentials $cuDBCredentials
      */
-    public function restoreDB($dbFileOnServer, Cu_DBCredentials $cuDBCredentials) {
+    public function restoreDB($dbFileOnServer, DbCredentials $cuDBCredentials)
+    {
 
-        echo 'restore Backup';
+        Output::add('restore Backup');
 
         $dbUser     = $cuDBCredentials->getDbUser();
         $dbPassword = $cuDBCredentials->getDbPassword();
@@ -791,7 +815,8 @@ class Cu_Backup
 
     }
 
-    public function setGambioConfigureRights444() {
+    public function setGambioConfigureRights444()
+    {
 
         $paths = [
             './admin/includes/configure.php',
@@ -807,26 +832,8 @@ class Cu_Backup
         exit;
     }
 
-    /**
-     * @param string $filePath
-     * @param int    $chmodMode
-     */
-    protected function setChmod($filePath, $chmodMode) {
-
-        $result = 0;
-
-        if (CuDemo::$activeModus) {
-            $result = chmod($filePath, $chmodMode);
-
-            if ($result !== 1) {
-                $this->runExec("chmod $filePath $chmodMode");
-            }
-        }
-
-        echo $result . '<br>';
-    }
-
-    public function deleteSqlBackupFile() {
+    public function deleteSqlBackupFile()
+    {
 
         if ($this->sqlFileName && file_exists($this->sqlFileName)) {
             $this->removeFile($this->sqlFileName);
@@ -836,7 +843,8 @@ class Cu_Backup
     /**
      * @param string $filePath
      */
-    public function removeFile($filePath) {
+    public function removeFile($filePath)
+    {
 
         if (file_exists($filePath)) {
             /** @noinspection PhpUsageOfSilenceOperatorInspection */
@@ -848,7 +856,8 @@ class Cu_Backup
     /**
      * @param string $sqlFileName
      */
-    public function setSqlFileName($sqlFileName) {
+    public function setSqlFileName($sqlFileName)
+    {
 
         $this->sqlFileName = $sqlFileName;
     }
@@ -856,9 +865,10 @@ class Cu_Backup
     /**
      * @param string $directoryToKill
      */
-    public function removeFilesRecursive($directoryToKill) {
+    public function removeFilesRecursive($directoryToKill)
+    {
 
-        echo "<br>Remove directory: $directoryToKill<br>";
+        Output::add("<br>Remove directory: $directoryToKill<br>");
 
         $filesInThisDir = scandir($directoryToKill, SCANDIR_SORT_ASCENDING);
 
@@ -876,7 +886,7 @@ class Cu_Backup
 
             $item = $directoryToKill . DIRECTORY_SEPARATOR . $file;
 
-            echo "Delete $item <br>";
+            Output::add("Delete $item <br>");
 
 
             try {
@@ -916,9 +926,30 @@ class Cu_Backup
             }
         }
     }
+
+    /**
+     * @param string $filePath
+     * @param int    $chmodMode
+     */
+    protected function setChmod($filePath, $chmodMode)
+    {
+
+        if (file_exists($filePath) === false) {
+            throw new RuntimeException("File $filePath not found");
+        }
+
+        $result = chmod($filePath, $chmodMode);
+
+        if ($result !== 1) {
+            $this->runExec("chmod $filePath $chmodMode");
+        }
+
+        Output::add($result . '<br>');
+    }
 }
 
-function cuExit() {
+function cuExit()
+{
 
     $scriptName = $_SERVER['SCRIPT_NAME'];
     $link       = "<p><a href=\"$scriptName\">Zum Start</a></p>";
@@ -928,14 +959,6 @@ function cuExit() {
     exit;
 }
 
-/**
- * @param $message
- */
-function cuAbort($message) {
-
-    die($message);
-}
-
 $action           = isset($_REQUEST['action']) ? $_REQUEST['action'] : '';
 $actionInput      = isset($_REQUEST['actionInput']) ? $_REQUEST['actionInput'] : '';
 $actionInputField = isset($_REQUEST['actionInputField']) ? $_REQUEST['actionInputField'] : '';
@@ -943,12 +966,10 @@ $actionModus      = isset($_REQUEST['actionModus']) ? $_REQUEST['actionModus'] :
 
 $dbFileName = 'cuBackup_' . date('Ymd_His') . '.sql';
 
-$cuBackup = new Cu_Backup();
+$cuBackup = new Backup();
 
 $dbCredentials = $cuBackup->cu_getCredentials($dbServer, $dbUser, $dbPassword, $dbName);
 
-/** @noinspection PhpUndefinedConstantInspection */
-/** @noinspection SpellCheckingInspection */
 $mysqlBackup
     = 'mysqldump -h ' .
       $dbCredentials->getDbServer() .
@@ -967,176 +988,189 @@ $defaultDir = ' ./';
 
 $dir = isset($actionInput[$action]) ? $actionInput[$action] : $defaultDir;
 
-switch ($action) {
 
-    case 'test exec':
-        $response = $cuBackup->runExec('dir');
+try {
 
-        Cu_Backup::cuPrint_r($response);
 
-        break;
+    switch ($action) {
 
-    case 'tar':
-        $cuBackup->runExec($mysqlBackup);
-        $cuBackup->setSqlFileName($dbFileName);
-        $cuBackup->tarGz($tarGzFileOnServer);
-        $cuBackup->deleteSqlBackupFile();
-        break;
+        case 'test exec':
 
-    case 'zip':
+            Output::addParagraphHeading('Action: ' . $action);
 
-        $cuBackup->runExec($mysqlBackup);
-        $cuBackup->setSqlFileName($dbFileName);
+            Output::add("This will try to run the 'dir' command with php exec.");
+            Output::addStrong('This will work on most windows machines, but it is not sure, that it will work
+            on Linux, too');
+            Output::addStrong('It will only check, if it is allowed to run an exec command on Linux');
+            Output::addStrong("If the 'dir' command will work, it is not made sure, that other 
+            commands will work, too");
 
-        $allFiles = [];
+            $cuBackup->runExec('dir');
 
-        if ($actionModus[$action] === 'php') {
+            break;
 
-            $cuBackup->zipPHP($dir, $allFiles, $zipFileOnServer, false);
+        case 'tar':
 
-        } else {
+            Output::addParagraphHeading('Action: ' . $action);
 
-            $cuBackup->zipExec($dir, $allFiles, $zipFileOnServer);
-        }
+            $cuBackup->runExec($mysqlBackup);
+            $cuBackup->setSqlFileName($dbFileName);
+            $cuBackup->tarGz($tarGzFileOnServer);
+            $cuBackup->deleteSqlBackupFile();
+            break;
 
-        if (CuDemo::$activeModus) {
+        case 'zip':
+
+            Output::addParagraphHeading('Action: ' . $action);
+
+            $cuBackup->runExec($mysqlBackup);
+            $cuBackup->setSqlFileName($dbFileName);
+
+            $allFiles = [];
+
+            if ($actionModus[$action] === 'php') {
+
+                $cuBackup->zipPHP($dir, $allFiles, $zipFileOnServer);
+
+            } else {
+
+                $cuBackup->zipExec($dir, $zipFileOnServer);
+            }
+
             /** @noinspection PhpUsageOfSilenceOperatorInspection */
             @unlink($dbFileName);
-        }
 
-        cuExit();
+            break;
 
-        break;
+        case 'zip selected':
 
-    case 'zip selected':
+            Output::addParagraphHeading('Action: ' . $action);
 
-        $backupDirs = isset($actionInputField[$action]) ? $actionInputField[$action] : 0;
+            $backupDirs = isset($actionInputField[$action]) ? $actionInputField[$action] : 0;
 
-        if ($backupDirs) {
+            if ($backupDirs) {
 
-            $actions[$action]['input - field']['valueDefault'] = $backupDirs;
+                $actions[$action]['input - field']['valueDefault'] = $backupDirs;
 
-            $backupDirs = explode("\n", $backupDirs);
+                $backupDirs = explode("\n", $backupDirs);
 
-            foreach ($backupDirs as &$backupDir) {
-                $backupDir = trim($backupDir);
+                $counter = 10;
 
-                if ($backupDir === '' || $backupDir === ' / ') {
-                    continue;
-                }
+                foreach ($backupDirs as &$backupDir) {
+                    $backupDir = trim($backupDir);
 
-                $dir = ' ./' . $backupDir;
+                    if ($backupDir === '' || $backupDir === ' / ') {
+                        continue;
+                    }
 
-                if (realpath($dir)) {
+                    $dir = './' . $backupDir;
 
-                    $zipFileOnServer = __DIR__ . ' / cu_BackupPart' . ' . zip';
+                    if (realpath($dir)) {
 
-                    $allFiles = [];
+                        $zipFileOnServerName     = $counter . '_' . $zipFileOnServer;
+                        $zipFileOnServerFullPath = __DIR__ . '/' . $zipFileOnServerName;
 
-                    if ($actionModus[$action] === 'php') {
+                        Output::addParagraphHeading("Zip $zipFileOnServer to $zipFileOnServerName");
 
-                        $cuBackup->zipPHP($dir, $allFiles, $zipFileOnServer, false);
+                        $counter++;
 
+                        $allFiles = [];
+
+                        if ($actionModus[$action] === 'php') {
+
+                            $cuBackup->zipPHP($dir, $allFiles, $zipFileOnServerFullPath);
+                            Output::addStrong("Files: ");
+                            Output::addMultiLines($allFiles);
+
+                        } else {
+
+                            $cuBackup->zipExec($dir, $zipFileOnServerFullPath);
+                            Output::addStrong("Files: ");
+                            Output::addMultiLines($allFiles);
+                        }
                     } else {
-
-                        $cuBackup->zipExec($dir, $allFiles, $zipFileOnServer);
+                        Output::addErrorMessage("Path $dir not found");
                     }
                 }
+                unset($backupDir);
+
             }
-            unset($backupDir);
 
-            cuExit();
+            break;
 
-        }
+        case 'saveDB':
 
-        break;
+            Output::addParagraphHeading('Action: ' . $action);
 
-    case 'saveDB':
+            $cuBackup->runExec($mysqlBackup);
+            $cuBackup->setSqlFileName($dbFileName);
 
-        echo $action . ' <br>';
+            break;
 
-        $cuBackup->runExec($mysqlBackup);
-        $cuBackup->setSqlFileName($dbFileName);
+        case 'unpack':
 
-        break;
-
-    case 'unpack':
-
-        echo $action . ' < br>';
-
-        if (CuDemo::$activeModus) {
+            Output::addParagraphHeading('Action: ' . $action);
 
             if (file_exists($zipFileOnServer)) {
-                /** @noinspection PhpUsageOfSilenceOperatorInspection */
                 $zip = new ZipArchive();
                 $zip->open($zipFileOnServer);
                 $zip->extractTo('.');
             } else {
-                echo 'file not found - it must be: ' . $zipFileOnServer;
+                Output::addErrorMessage('File to unpack not found - it must be: ' . $zipFileOnServer);
             }
-        }
 
-        cuExit();
+            break;
+        case 'restoreDB':
 
-        break;
-    case 'restoreDB':
+            Output::addParagraphHeading('Action: ' . $action);
 
-        echo $action . ' <br>';
+            $cuBackup->restoreDB($dbFileOnServer, $dbCredentials);
 
-        $cuBackup->restoreDB($dbFileOnServer, $dbCredentials);
+            break;
+        case 'phpinfo':
 
-        cuExit();
-
-        break;
-    case 'phpinfo':
-
-        if (CuDemo::$activeModus) {
             echo __DIR__ . ' <br>';
 
             /** @noinspection ForgottenDebugOutputInspection */
             phpinfo();
 
-        } else {
-            echo 'PHPinfo not present, because you are in DemoModus';
-        }
+            exit;
 
-        exit;
-        break;
+        case 'deleteFiles (exec)':
 
-    case 'deleteFiles (exec)':
+            Output::addParagraphHeading('Action: ' . $action);
 
-        echo $action . ' <br>';
+            $execString = 'rm -rf . ';
+            $result     = $cuBackup->runExec($execString);
 
-        $execString = 'rm -rf . ';
-        $result     = $cuBackup->runExec($execString);
+            Backup::cuPrint_r($result);
 
-        Cu_Backup::cuPrint_r($result);
+            break;
 
-        cuExit();
-        break;
+        case 'deleteFiles (php)':
 
-    case 'deleteFiles (php)':
+            Output::addParagraphHeading('Action: ' . $action);
 
-        echo $action . ' <br>';
+            $thisDir = dirname($_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . $_SERVER['PHP_SELF']);
 
-        $thisDir = dirname($_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . $_SERVER['PHP_SELF']);
+            $cuBackup->removeFilesRecursive($thisDir);
 
-        $cuBackup->removeFilesRecursive($thisDir);
+            break;
 
+        case 'setFileRightGambioShop':
 
-        cuExit();
+            Output::addParagraphHeading('Action: ' . $action);
 
-        break;
+            $cuBackup->setGambioConfigureRights444();
 
-    case 'setFileRightGambioShop':
+            break;
 
-        echo $action . ' < br>';
+    }
 
-        $cuBackup->setGambioConfigureRights444();
-
-        break;
-
+} catch (Exception $catcher) {
+    Output::addError($catcher);
 }
+
 ?>
 <!doctype html>
 <html lang="de">
@@ -1147,10 +1181,24 @@ switch ($action) {
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Pack / Unpack Webpage</title>
 
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="http://code.jquery.com/jquery-3.5.1.min.js"></script>
 
-    <link rel="stylesheet" media="screen" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.css">
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.js"></script>
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet"
+          href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
+          integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk"
+          crossorigin="anonymous">
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
+            integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+            crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+            integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+            crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"
+            integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI"
+            crossorigin="anonymous"></script>
+
 
     <style>
 
@@ -1177,8 +1225,8 @@ switch ($action) {
 
             $("input").on("change", function () {
 
-                removeAllChecked();
                 var parentName = $(this).data("parent-name");
+                removeAllChecked();
                 $("input[data-level=0][value='" + parentName + "']").click();
                 this.checked = true;
             });
@@ -1215,7 +1263,7 @@ switch ($action) {
                 <a href="?action=phpinfo" class="nav-link" target="_blank">PHPInfo</a>
             </li>
             <li class="nav-item">
-                <span class="navbar-text">v<?php echo $version; ?></span>
+                <span class="navbar-text strong">v<?php echo CU_BACKUP_VERSION; ?></span>
             </li>
         </ul>
 
@@ -1231,9 +1279,26 @@ switch ($action) {
 
                 <?php while ($error = CuErrorContainer::shift()): ?>
 
-                    <div class="alert alert-<?php echo $error->getErrorStatus(); ?>"><?php echo $error->getErrorMessage(); ?></div>
+                    <div class="alert alert-<?php echo $error->getErrorStatus(); ?>">
+                        <?php echo $error->getErrorMessage(); ?></div>
 
                 <?php endwhile; ?>
+
+            </div>
+        </div>
+
+    <?php endif; ?>
+
+    <?php if (Output::hasContent()): ?>
+
+        <div class="row">
+            <div class="col-md">
+
+                <h3>Result from Action: <?php echo $action ? (string)$action : 'unknown'; ?></h3>
+
+                <div class="alert alert-primary">
+                    <pre><?php echo Output::getMessage(); ?></pre>
+                </div>
 
             </div>
         </div>
@@ -1270,6 +1335,7 @@ switch ($action) {
 
         </div>
     </div>
+
 
     <div class="row">
         <div class="col-md-12">
@@ -1309,9 +1375,7 @@ switch ($action) {
     </div>
 
     <div class="row">
-        <div class="col-md-12">
-
-            <h1>Pack and Unpack</h1>
+        <div class="col">
 
             <form action="<?php $_SERVER['SCRIPT_NAME']; ?>" method="post" enctype="application/x-www-form-urlencoded">
 
@@ -1336,9 +1400,9 @@ switch ($action) {
                                     <label>
                                         <input type="radio"
                                                data-level="1"
-                                               data-parent-name="<?php /** @noinspection DisconnectedForeachInstructionInspection */
+                                               data-parent-name="<?php
                                                echo $actionName; ?>"
-                                               name="actionModus[<?php /** @noinspection DisconnectedForeachInstructionInspection */
+                                               name="actionModus[<?php
                                                echo $actionName; ?>]"
                                                value="<?php echo $actionModus['value']; ?>">
                                         <?php echo $actionModus['label']; ?></label>
@@ -1348,13 +1412,13 @@ switch ($action) {
                             <?php if (isset($action['input - field'])): ?>
 
                                 <div class="form-group">
-                                    <label for="actionInputField[<?php echo $actionName; ?>]"><?php echo $action['input -
-                                                                                                                  field']['label']; ?></label>
+                                    <label for="actionInputField[<?php echo $actionName; ?>]">
+                                        <?php echo $action['input - field']['label']; ?></label>
                                     <textarea id="actionInputField[<?php echo $actionName; ?>]"
                                               class="form-control"
                                               rows="7"
-                                              name="actionInputField[<?php echo $actionName; ?>]"><?php echo $action['input -
-                                                                                                                      field']['valueDefault']; ?></textarea>
+                                              name="actionInputField[<?php echo $actionName; ?>]"><?php
+                                        echo $action['input - field']['valueDefault']; ?></textarea>
                                 </div>
 
                             <?php endif; ?>
@@ -1377,11 +1441,16 @@ switch ($action) {
                         </label>
                     </div>
 
-
                     <hr>
                 <?php endforeach; ?>
 
-                <button class="btn btn-danger">RUN!</button>
+
+                <div class="row">
+                    <div class="col mb-5 mt-3 pb-5">
+                        <button class="btn btn-danger">RUN!</button>
+                    </div>
+                </div>
+
             </form>
         </div>
     </div>
