@@ -3,5 +3,11 @@
 
 # IntelliJ project files
 .idea
-
-/vendor/
+*
+!.gitignore
+!composer.json
+!LICENSE
+!readme.md
+!cuBackupBin
+!cuBackupBin/*
+!cuBackup.php
