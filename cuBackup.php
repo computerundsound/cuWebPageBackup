@@ -12,7 +12,7 @@
 /* ************************/
 
 // 0 => script will only return a blank page, nothing done (switched off) || 1 = will run
-$scriptIsActive = 0;
+$scriptIsActive = 1;
 
 /* Enter some db-Credentials here - if no other credentials will be found, this will be used */
 $dbServer   = '';
