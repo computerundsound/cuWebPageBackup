@@ -72,6 +72,8 @@ if ($scriptIsActive !== 1) {
     exit;
 }
 
+$isDefaultClass = 'cuB__default';
+
 /**
  * Class CuDirectoryInfo
  */
@@ -221,7 +223,8 @@ $allDirsInThisDirectory = getDirsFromDir('./', $directoryListAsString);
 $actions = [
     'test exec'              => ['text' => 'Check if php-exec is possible (belongs to the server)'],
     'zip'                    => [
-        'text'  => 'Create a zip-file from whole directory and all subdirectories - database backup included',
+        'text'  => 'Create a zip-file from whole directory and all subdirectories - database backup included
+        <br><strong>In most cases, one of these two options is the best choice</strong>',
         'input' => [
             'label'        => 'Wich directory should be zipped?',
             'valueDefault' => './',
@@ -236,6 +239,7 @@ $actions = [
             longer than the php-script!',
              'value' => 'exec'],
         ],
+        'isDefault' => true
     ],
     'zip selected'           => [
         'text' => 'Creates an ZipFile from directory (with all subdirectories) without Database-backup. 
@@ -1207,6 +1211,10 @@ try {
             margin-bottom: 0;
         }
 
+        .cuB__default {
+            background: #32f811;
+        }
+
     </style>
 
     <!--suppress JSUnresolvedFunction, JSUnusedGlobalSymbols -->
@@ -1379,9 +1387,15 @@ try {
 
             <form action="<?php $_SERVER['SCRIPT_NAME']; ?>" method="post" enctype="application/x-www-form-urlencoded">
 
-                <?php foreach ($actions as $actionName => $action): ?>
+                <?php
+                foreach ($actions as $actionName => $action):
 
-                    <div class="form-group form-check">
+                    /** @var bool $isDefault */
+                    $isDefault = isset($action['isDefault']) ? $action['isDefault'] : false;
+
+                ?>
+
+                    <div class="form-group form-check <?php echo ($isDefault ? $isDefaultClass : '') ?>">
                         <label>
                             <input class="form-check-input"
                                    type="radio"
