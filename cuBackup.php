@@ -12,7 +12,7 @@
 /* ************************/
 
 // 0 => script will only return a blank page, nothing done (switched off) || 1 = will run
-$scriptIsActive = 1;
+$scriptIsActive = 0;
 
 /* Enter some db-Credentials here - if no other credentials will be found, this will be used */
 $dbServer   = '';
@@ -549,7 +549,7 @@ class Backup
 
         $messageRaw = print_r($value, true);
 
-        $message = $htmlEntities ? htmlentities2($messageRaw) : $messageRaw;
+        $message = $htmlEntities ? htmlentities($messageRaw) : $messageRaw;
 
         Output::add("$message\n");
     }
