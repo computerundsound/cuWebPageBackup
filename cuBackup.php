@@ -12,7 +12,7 @@
 /* ************************/
 
 // 0 => script will only return a blank page, nothing done (switched off) || 1 = will run
-$scriptIsActive = 1;
+$scriptIsActive = 0;
 
 /* Enter some db-Credentials here - if no other credentials will be found, this will be used */
 $dbServer   = '';
@@ -25,11 +25,22 @@ $tarGzFileOnServer = 'cuBackup.tar.gz'; // File on Server for tar.gz
 $dbFileOnServer    = 'cuBackup.sql'; // File on Server to for db
 
 
+$excludedDirs = [
+    './.git',
+    './cache',
+    './logfiles',
+    './logs',
+    './templates_c',
+    './test',
+    './uploads/attachements',
+    './uploads/tmp',
+];
+
 // End Edit **********************************************************
 // End Edit **********************************************************
 // End Edit **********************************************************
 
-define('CU_BACKUP_VERSION', '2.0.0');
+define('CU_BACKUP_VERSION', '2.1.0');
 
 /*
  *
@@ -60,11 +71,11 @@ $serverName = isset($_SERVER['SERVER_NAME']) ? $_SERVER['SERVER_NAME'] : '';
 error_reporting(E_ALL);
 
 /** @noinspection PhpUsageOfSilenceOperatorInspection */
-@ini_set('max_execution_time', '360');
+@ini_set('max_execution_time', '600');
 /** @noinspection PhpUsageOfSilenceOperatorInspection */
-@ini_set('max_input_time', '240');
+@ini_set('max_input_time', '500');
 /** @noinspection PhpUsageOfSilenceOperatorInspection */
-@ini_set('memory_limit', '512M');
+@ini_set('memory_limit', '2048M');
 /** @noinspection PhpUsageOfSilenceOperatorInspection */
 @ini_set('max_input_vars', '5500');
 
@@ -223,23 +234,25 @@ $allDirsInThisDirectory = getDirsFromDir('./', $directoryListAsString);
 $actions = [
     'test exec'              => ['text' => 'Check if php-exec is possible (belongs to the server)'],
     'zip'                    => [
-        'text'  => 'Create a zip-file from whole directory and all subdirectories - database backup included
+        'text'      => 'Create a zip-file from whole directory and all subdirectories - database backup included
         <br><strong>In most cases, one of these two options is the best choice</strong>',
-        'input' => [
+        'input'     => [
             'label'        => 'Wich directory should be zipped?',
             'valueDefault' => './',
         ],
-        'modus' => [
+        'modus'     => [
             [
                 'label' => 'Try it with PHP-ZipArchive - slower and can run into server-timeout. 
                 But use this if php-exec is not possible',
                 'value' => 'php',
+                'info'  => 'Some directories will be excluded. You can edit them in this file. The directories are:<br><strong>' .
+                           implode(', ', $excludedDirs) . '</strong>',
             ],
             ['label' => 'Try with php-exec. If you got a timeout-error please wait: php-exec runs 
             longer than the php-script!',
              'value' => 'exec'],
         ],
-        'isDefault' => true
+        'isDefault' => true,
     ],
     'zip selected'           => [
         'text' => 'Creates an ZipFile from directory (with all subdirectories) without Database-backup. 
@@ -549,7 +562,7 @@ class Backup
 
         $messageRaw = print_r($value, true);
 
-        $message = $htmlEntities ? htmlentities2($messageRaw) : $messageRaw;
+        $message = $htmlEntities ? htmlentities($messageRaw) : $messageRaw;
 
         Output::add("$message\n");
     }
@@ -726,16 +739,15 @@ class Backup
      * @param string $dir
      * @param array  $allFiles
      * @param string $zipFileOnServer
-     * @param bool   $setTimestamp
      *
      * @return int
      */
-    public function zipPHP($dir, &$allFiles, $zipFileOnServer)
+    public function zipPHP($dir, array &$allFiles, $zipFileOnServer, array $excludedDirs)
     {
 
         Output::add($zipFileOnServer . '<br>');
 
-        $allFilesCount = $this->scanDirRecursive($dir, $allFiles);
+        $allFilesCount = $this->scanDirRecursive($dir, $allFiles, $excludedDirs);
 
         $zip = new ZipArchive();
         Output::add('ErrorCode: ' . $zip->open($zipFileOnServer, ZipArchive::CREATE) . ' (1 === OK)<br>');
@@ -767,7 +779,7 @@ class Backup
      *
      * @return int
      */
-    public function scanDirRecursive($dir, &$allFiles)
+    public function scanDirRecursive($dir, &$allFiles, array $excludedDirs = [])
     {
 
         $files = scandir($dir, SCANDIR_SORT_ASCENDING);
@@ -785,9 +797,13 @@ class Backup
 
             $newFile = $dir . $separator . $file;
 
+            if (in_array($newFile, $excludedDirs, true)) {
+                continue;
+            }
+
             if (is_dir($newFile)) {
                 $allFiles[] = $newFile;
-                $this->scanDirRecursive($newFile, $allFiles);
+                $this->scanDirRecursive($newFile, $allFiles, $excludedDirs);
             } else {
                 $allFiles[] = $newFile;
             }
@@ -1034,7 +1050,7 @@ try {
 
             if ($actionModus[$action] === 'php') {
 
-                $cuBackup->zipPHP($dir, $allFiles, $zipFileOnServer);
+                $cuBackup->zipPHP($dir, $allFiles, $zipFileOnServer, $excludedDirs);
 
             } else {
 
@@ -1082,7 +1098,7 @@ try {
 
                         if ($actionModus[$action] === 'php') {
 
-                            $cuBackup->zipPHP($dir, $allFiles, $zipFileOnServerFullPath);
+                            $cuBackup->zipPHP($dir, $allFiles, $zipFileOnServerFullPath, $excludedDirs);
                             Output::addStrong("Files: ");
                             Output::addMultiLines($allFiles);
 
@@ -1213,6 +1229,10 @@ try {
 
         .cuB__default {
             background: #32f811;
+        }
+
+        .form-check {
+            padding-left: 2em;
         }
 
     </style>
@@ -1393,69 +1413,82 @@ try {
                     /** @var bool $isDefault */
                     $isDefault = isset($action['isDefault']) ? $action['isDefault'] : false;
 
-                ?>
+                    ?>
 
-                    <div class="form-group form-check <?php echo ($isDefault ? $isDefaultClass : '') ?>">
-                        <label>
-                            <input class="form-check-input"
-                                   type="radio"
-                                   name="action"
-                                   data-level="0"
-                                   value="<?php echo $actionName; ?>">
-                            <?php echo $action['text']; ?>
+                    <div class="row">
+                        <div class="col">
 
-                            <?php
+                            <div class="form-group form-check <?php echo($isDefault ? $isDefaultClass : '') ?>">
 
-                            $actionModi = isset($action['modus']) ? $action['modus'] : [];
+                                <label>
+                                    <input class="form-check-input"
+                                           type="radio"
+                                           name="action"
+                                           data-level="0"
+                                           value="<?php echo $actionName; ?>">
+                                </label>
 
-                            foreach ($actionModi as $actionModus):
-                                ?>
-                                <div class="form-group form-check">
-                                    <label>
-                                        <input type="radio"
-                                               data-level="1"
-                                               data-parent-name="<?php
-                                               echo $actionName; ?>"
-                                               name="actionModus[<?php
-                                               echo $actionName; ?>]"
-                                               value="<?php echo $actionModus['value']; ?>">
-                                        <?php echo $actionModus['label']; ?></label>
-                                </div>
-                            <?php endforeach; ?>
+                                <?php echo $action['text']; ?>
 
-                            <?php if (isset($action['input - field'])): ?>
+                                <?php
 
-                                <div class="form-group">
-                                    <label for="actionInputField[<?php echo $actionName; ?>]">
-                                        <?php echo $action['input - field']['label']; ?></label>
-                                    <textarea id="actionInputField[<?php echo $actionName; ?>]"
-                                              class="form-control"
-                                              rows="7"
-                                              name="actionInputField[<?php echo $actionName; ?>]"><?php
-                                        echo $action['input - field']['valueDefault']; ?></textarea>
-                                </div>
+                                $actionModi = isset($action['modus']) ? $action['modus'] : [];
 
-                            <?php endif; ?>
+                                foreach ($actionModi as $actionModus):
+                                    ?>
+                                    <div class="form-group form-check">
+                                        <label>
+                                            <input type="radio"
+                                                   data-level="1"
+                                                   data-parent-name="<?php
+                                                   echo $actionName; ?>"
+                                                   name="actionModus[<?php
+                                                   echo $actionName; ?>]"
+                                                   value="<?php echo $actionModus['value']; ?>">
+                                            <?php echo $actionModus['label']; ?>
+                                            <br>
+                                            <?php if (isset($actionModus['info'])): ?>
+                                                <?php echo $actionModus['info']; ?>
+                                            <?php endif; ?>
+
+                                        </label>
+
+                                    </div>
+                                <?php endforeach; ?>
+
+                                <?php if (isset($action['input - field'])): ?>
+
+                                    <div class="form-group">
+                                        <label for="actionInputField[<?php echo $actionName; ?>]">
+                                            <?php echo $action['input - field']['label']; ?></label>
+                                        <textarea id="actionInputField[<?php echo $actionName; ?>]"
+                                                  class="form-control"
+                                                  rows="7"
+                                                  name="actionInputField[<?php echo $actionName; ?>]"><?php
+                                            echo $action['input - field']['valueDefault']; ?></textarea>
+                                    </div>
+
+                                <?php endif; ?>
 
 
-                            <?php if (isset($action['input'])): ?>
+                                <?php if (isset($action['input'])): ?>
 
-                                <div class="form-group">
-                                    <label>
-                                        <?php echo $action['input']['label']; ?>
-                                        <input type="text"
-                                               name="actionInput[<?php echo $actionName; ?>]"
-                                               value="<?php echo $action['input']['valueDefault']; ?>">
-                                    </label>
-                                </div>
+                                    <div class="form-group">
+                                        <label>
+                                            <?php echo $action['input']['label']; ?>
+                                            <input type="text"
+                                                   name="actionInput[<?php echo $actionName; ?>]"
+                                                   value="<?php echo $action['input']['valueDefault']; ?>">
+                                        </label>
+                                    </div>
 
-                            <?php endif; ?>
+                                <?php endif; ?>
 
+                            </div>
 
-                        </label>
+                            <hr>
+                        </div>
                     </div>
-
-                    <hr>
                 <?php endforeach; ?>
 
 
